@@ -1,8 +1,13 @@
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
 
-// Debugging
-const bool kPlotVectorField = false;
+#include <string>
+
+const std::string window_name_main = "Capture - Face detection";
+const std::string window_name_face = "Capture - Face";
+const std::string window_name_left_eye  = "Left Eye";
+const std::string window_name_right_eye = "Right Eye";
+
 
 // Size constants
 const int kEyePercentTop = 25;
@@ -27,5 +32,8 @@ const float kPostProcessThreshold = 0.97;
 
 // Eye Corner
 const bool kEnableEyeCorner = false;
+
+// If true user will be asked to select the eye area upfront. Otherwise find face, then eyes
+const bool kCameraIsHeadmounted = false;
 
 #endif
