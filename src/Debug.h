@@ -18,7 +18,7 @@ public:
 	
 	cv::Mat& getImage();
 	void setImage(cv::Mat &source);
-	void display(std::string window_name);
+	void display(cv::String window_name);
 	
 	void addRectangle(cv::Rect r, cv::Scalar color = 1234);
 	void addCircle(cv::Point p, cv::Scalar color = 1234);

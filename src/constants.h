@@ -1,12 +1,10 @@
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
 
-#include <string>
-
-const std::string window_name_main = "Capture - Face detection";
-const std::string window_name_face = "Capture - Face";
-const std::string window_name_left_eye  = "Left Eye";
-const std::string window_name_right_eye = "Right Eye";
+const cv::String window_name_main = "Capture - Face detection";
+const cv::String window_name_face = "Capture - Face";
+const cv::String window_name_left_eye  = "Left Eye";
+const cv::String window_name_right_eye = "Right Eye";
 
 
 // Size constants
@@ -33,7 +31,7 @@ const float kPostProcessThreshold = 0.97;
 // Eye Corner
 const bool kEnableEyeCorner = false;
 
-// If true user will be asked to select the eye area upfront. Otherwise find face, then eyes
+// Ask user to select eye reagion upfront. Otherwise find eyes with face detection
 const bool kCameraIsHeadmounted = false;
 
 #endif
