@@ -1,7 +1,10 @@
 #include "findHeadmount.h"
 
+#include <fstream>
+
 using namespace Detector;
 
+static const char* preloadPosition = "../../../res/headmount_pos.txt";
 static std::vector<cv::Point> userPoints;
 
 void mouseHandler(int event, int x, int y, int flags, void* param) {
@@ -21,6 +24,19 @@ cv::Rect arrangePoints(cv::Point a, cv::Point b) {
 
 TwoEyes Headmount::askUserForInput(cv::VideoCapture cam, cv::String window) {
 	cv::Mat frame;
+	
+	FILE *file = fopen(preloadPosition, "r");
+	bool shouldWriteToFile = true;
+	cv::Point ltl, lbr, rtl, rbr;
+	if ( file && fscanf(file, "[%d %d] [%d %d] - [%d %d] [%d %d]\n", &ltl.x, &ltl.y, &lbr.x, &lbr.y, &rtl.x, &rtl.y, &rbr.x, &rbr.y) ) {
+		userPoints.push_back(ltl);
+		userPoints.push_back(lbr);
+		userPoints.push_back(rtl);
+		userPoints.push_back(rbr);
+		userPoints.push_back(ltl); // because 5 points are needed for manual setup
+		shouldWriteToFile = false;
+	}
+	fclose(file);
 	
 	setMouseCallback(window, mouseHandler, NULL);
 	
@@ -49,6 +65,16 @@ TwoEyes Headmount::askUserForInput(cv::VideoCapture cam, cv::String window) {
 	}
 	
 	setMouseCallback(window, nullptr, NULL);
+	
+	if (shouldWriteToFile) {
+		std::ofstream outputStream(preloadPosition);
+		outputStream
+		<< "[" << userPoints[0].x << " " << userPoints[0].y << "] "
+		<< "[" << userPoints[1].x << " " << userPoints[1].y << "] - "
+		<< "[" << userPoints[2].x << " " << userPoints[2].y << "] "
+		<< "[" << userPoints[3].x << " " << userPoints[3].y << "]\n";
+		outputStream.close();
+	}
 	
 	cv::Rect l = arrangePoints(userPoints[0], userPoints[1]);
 	cv::Rect r = arrangePoints(userPoints[2], userPoints[3]);
