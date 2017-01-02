@@ -24,23 +24,6 @@ void scaleToFastSize(const cv::Mat &src,cv::Mat &dst) {
 	cv::resize(src, dst, cv::Size(kFastEyeWidth,(((float)kFastEyeWidth)/src.cols) * src.rows));
 }
 
-cv::Mat computeMatXGradient(const cv::Mat &mat) {
-	cv::Mat out(mat.rows,mat.cols,CV_64F);
-	
-	for (int y = 0; y < mat.rows; ++y) {
-		const uchar *Mr = mat.ptr<uchar>(y);
-		double *Or = out.ptr<double>(y);
-		
-		Or[0] = Mr[1] - Mr[0];
-		for (int x = 1; x < mat.cols - 1; ++x) {
-			Or[x] = (Mr[x+1] - Mr[x-1])/2.0;
-		}
-		Or[mat.cols-1] = Mr[mat.cols-1] - Mr[mat.cols-2];
-	}
-	
-	return out;
-}
-
 double computeDynamicThreshold(const cv::Mat &mat, double stdDevFactor) {
 	cv::Scalar stdMagnGrad, meanMagnGrad;
 	cv::meanStdDev(mat, meanMagnGrad, stdMagnGrad);
@@ -48,51 +31,33 @@ double computeDynamicThreshold(const cv::Mat &mat, double stdDevFactor) {
 	return stdDevFactor * stdDev + meanMagnGrad[0];
 }
 
-cv::Mat matrixMagnitude(const cv::Mat &matX, const cv::Mat &matY) {
-	cv::Mat mags(matX.rows,matX.cols,CV_64F);
-	for (int y = 0; y < matX.rows; ++y) {
-		const double *Xr = matX.ptr<double>(y), *Yr = matY.ptr<double>(y);
-		double *Mr = mags.ptr<double>(y);
-		for (int x = 0; x < matX.cols; ++x) {
-			double gX = Xr[x], gY = Yr[x];
-			double magnitude = sqrt((gX * gX) + (gY * gY));
-			Mr[x] = magnitude;
-		}
-	}
-	return mags;
-}
 
 #pragma mark Main Algorithm
 
 void testPossibleCentersFormula(int x, int y, const cv::Mat &weight, double gx, double gy, cv::Mat &out) {
-	// for all possible centers
-	for (int cy = 0; cy < out.rows; ++cy) {
-		double *Or = out.ptr<double>(cy);
-		const unsigned char *Wr = weight.ptr<unsigned char>(cy);
-		for (int cx = 0; cx < out.cols; ++cx) {
-			if (x == cx && y == cy) {
-				continue;
-			}
-			// create a vector from the possible center to the gradient origin
-			double dx = x - cx;
-			double dy = y - cy;
-			// normalize d
-			double magnitude = sqrt((dx * dx) + (dy * dy));
-			dx = dx / magnitude;
-			dy = dy / magnitude;
-			double dotProduct = dx*gx + dy*gy;
-			dotProduct = std::max(0.0,dotProduct);
-			// square and multiply by the weight
-			if (kEnableWeight) {
-				Or[cx] += dotProduct * dotProduct * (Wr[cx]/kWeightDivisor);
-			} else {
-				Or[cx] += dotProduct * dotProduct;
-			}
+	out.forEach<double>([&](double &Or, const int position[]) {
+		const int cy = position[0];
+		const int cx = position[1];
+		if (x == cx && y == cy) {
+			return;
 		}
-	}
+		double dx = x - cx;
+		double dy = y - cy;
+		// normalize d
+		double magnitude = sqrt((dx * dx) + (dy * dy));
+		dx = dx / magnitude;
+		dy = dy / magnitude;
+		double dotProduct = dx*gx + dy*gy;
+		dotProduct = std::max(0.0,dotProduct);
+		// square and multiply by the weight
+		if (kEnableWeight) {
+			const unsigned char *Wr = weight.ptr<unsigned char>(cy);
+			Or += dotProduct * dotProduct * (Wr[cx]/kWeightDivisor);
+		} else {
+			Or += dotProduct * dotProduct;
+		}
+	});
 }
-
-
 
 cv::Point EyeCenter::findEyeCenter(cv::Mat face, cv::Rect eye, std::string debugWindow) {
 	cv::Mat eyeROIUnscaled = face(eye);
@@ -100,11 +65,14 @@ cv::Point EyeCenter::findEyeCenter(cv::Mat face, cv::Rect eye, std::string debug
 	scaleToFastSize(eyeROIUnscaled, eyeROI);
 	
 	//-- Find the gradient
-	cv::Mat gradientX = computeMatXGradient(eyeROI);
-	cv::Mat gradientY = computeMatXGradient(eyeROI.t()).t();
+	cv::Mat gradientX, gradientY;
+	cv::Sobel( eyeROI, gradientX, CV_64F, 1, 0, 1, 0.5 ); // 1.1x slower, but straigth forward understanding
+	cv::Sobel( eyeROI, gradientY, CV_64F, 0, 1, 1, 0.5 );
+	
 	//-- Normalize and threshold the gradient
 	// compute all the magnitudes
-	cv::Mat mags = matrixMagnitude(gradientX, gradientY);
+	cv::Mat mags;
+	cv::magnitude(gradientX, gradientY, mags); // 3.5x faster
 	//compute the threshold
 	double gradientThresh = computeDynamicThreshold(mags, kGradientThreshold);
 //	double gradientThresh = kGradientThreshold;
@@ -125,16 +93,13 @@ cv::Point EyeCenter::findEyeCenter(cv::Mat face, cv::Rect eye, std::string debug
 			}
 		}
 	}
-	imshow(debugWindow,gradientX);
+	imshow(debugWindow, gradientX);
+	
 	//-- Create a blurred and inverted image for weighting
 	cv::Mat weight;
 	GaussianBlur( eyeROI, weight, cv::Size( kWeightBlurSize, kWeightBlurSize ), 0, 0 );
-	for (int y = 0; y < weight.rows; ++y) {
-		unsigned char *row = weight.ptr<unsigned char>(y);
-		for (int x = 0; x < weight.cols; ++x) {
-			row[x] = (255 - row[x]);
-		}
-	}
+	cv::bitwise_not(weight, weight); // 20x faster
+	
 //	imshow(debugWindow,weight);
 	//-- Run the algorithm!
 	cv::Mat outSum = cv::Mat::zeros(eyeROI.rows,eyeROI.cols,CV_64F);
@@ -143,16 +108,16 @@ cv::Point EyeCenter::findEyeCenter(cv::Mat face, cv::Rect eye, std::string debug
 	// it evaluates every possible center for each gradient location instead of
 	// every possible gradient location for every center.
 	printf("Eye Size: %ix%i\n",outSum.cols,outSum.rows);
-	for (int y = 0; y < weight.rows; ++y) {
-		const double *Xr = gradientX.ptr<double>(y), *Yr = gradientY.ptr<double>(y);
-		for (int x = 0; x < weight.cols; ++x) {
-			double gX = Xr[x], gY = Yr[x];
-			if (gX == 0.0 && gY == 0.0) {
-				continue;
-			}
-			testPossibleCentersFormula(x, y, weight, gX, gY, outSum);
+	gradientX.forEach<double>([&gradientY, &weight, &outSum](const double &gX, const int position[]) {
+		const int y = position[0];
+		const int x = position[1];
+		const double gY = gradientY.ptr<double>(y)[x];
+		if (gX == 0.0 && gY == 0.0) {
+			return;
 		}
-	}
+		testPossibleCentersFormula(x, y, weight, gX, gY, outSum);
+	}); // 1.6x faster
+	
 	// scale all the values down, basically averaging them
 	double numGradients = (weight.rows*weight.cols);
 	cv::Mat out;

@@ -30,15 +30,13 @@ int main( int argc, const char** argv )
 	
 	cv::namedWindow(window_name_main,CV_WINDOW_NORMAL);
 	cv::moveWindow(window_name_main, 400, 100);
+	cv::namedWindow(window_name_face,CV_WINDOW_AUTOSIZE);
+	cv::moveWindow(window_name_face, 100, 100);
 	cv::namedWindow(window_name_right_eye,CV_WINDOW_NORMAL);
 	cv::moveWindow(window_name_right_eye, 10, 600);
 	cv::namedWindow(window_name_left_eye,CV_WINDOW_NORMAL);
 	cv::moveWindow(window_name_left_eye, 10, 800);
 	
-	if ( !kCameraIsHeadmounted ) {
-		cv::namedWindow(window_name_face,CV_WINDOW_AUTOSIZE);
-		cv::moveWindow(window_name_face, 10, 100);
-	}
 	
 	TwoEyes eyes;
 	cv::Mat frame;
@@ -101,39 +99,37 @@ cv::Point2f findPupil( cv::Mat &faceImage, cv::Rect2f &eyeRegion, bool isLeftEye
 		cv::Point2f pupil = detectCenter.findEyeCenter(faceImage, eyeRegion, (isLeftEye ? window_name_left_eye : window_name_right_eye) );
 		
 #if DEBUG_PLOT_ENABLED
-		if ( !kCameraIsHeadmounted ) {
-			// get tiled eye region
-			//  .-----------.
-			//  |___________|
-			//  |      |    |
-			//  | L    *  R |  // * = pupil
-			//  |______|____|
-			//  |           |
-			//  '-----------'
-			cv::Rect2f leftRegion(eyeRegion.x, eyeRegion.y, pupil.x, eyeRegion.height / 2);
-			leftRegion.y += leftRegion.height / 2;
-			
-			cv::Rect2f rightRegion(leftRegion);
-			rightRegion.x += pupil.x;
-			rightRegion.width = eyeRegion.width - pupil.x;
-			
-			if (kEnableEyeCorner) {
-				cv::Point2f leftCorner = detectCorner.find(faceImage(leftRegion), isLeftEye, true);
-				cv::Point2f rightCorner = detectCorner.find(faceImage(rightRegion), isLeftEye, false);
-				debugEye.addCircle( leftCorner + leftRegion.tl() , 200 );
-				debugEye.addCircle( rightCorner + rightRegion.tl() , 200 );
-			}
-			
-			// draw eye region
-			debugEye.addRectangle(eyeRegion);
-			
-			// draw tiled eye box
-			debugEye.addRectangle(leftRegion, 200);
-			debugEye.addRectangle(rightRegion, 200);
-			
-			// draw eye center
-			debugEye.addCircle(pupil + eyeRegion.tl());
+		// get tiled eye region
+		//  .-----------.
+		//  |___________|
+		//  |      |    |
+		//  | L    *  R |  // * = pupil
+		//  |______|____|
+		//  |           |
+		//  '-----------'
+		cv::Rect2f leftRegion(eyeRegion.x, eyeRegion.y, pupil.x, eyeRegion.height / 2);
+		leftRegion.y += leftRegion.height / 2;
+		
+		cv::Rect2f rightRegion(leftRegion);
+		rightRegion.x += pupil.x;
+		rightRegion.width = eyeRegion.width - pupil.x;
+		
+		if (kEnableEyeCorner) {
+			cv::Point2f leftCorner = detectCorner.find(faceImage(leftRegion), isLeftEye, true);
+			cv::Point2f rightCorner = detectCorner.find(faceImage(rightRegion), isLeftEye, false);
+			debugEye.addCircle( leftCorner + leftRegion.tl() , 200 );
+			debugEye.addCircle( rightCorner + rightRegion.tl() , 200 );
 		}
+		
+		// draw eye region
+		debugEye.addRectangle(eyeRegion);
+		
+		// draw tiled eye box
+		debugEye.addRectangle(leftRegion, 200);
+		debugEye.addRectangle(rightRegion, 200);
+		
+		// draw eye center
+		debugEye.addCircle(pupil + eyeRegion.tl());
 #endif
 		
 		return pupil + eyeRegion.tl(); // add offset
@@ -143,9 +139,7 @@ cv::Point2f findPupil( cv::Mat &faceImage, cv::Rect2f &eyeRegion, bool isLeftEye
 
 
 TwoPupils findPupils( cv::Mat faceROI, TwoEyes eyes, cv::Point2f offset ) {
-	if ( !kCameraIsHeadmounted ) {
-		debugEye.setImage(faceROI);
-	}
+	debugEye.setImage(faceROI);
 	
 	//-- Find Eye Centers
 	cv::Point2f leftPupil = findPupil( faceROI, eyes.first, true ) + offset;
@@ -157,9 +151,7 @@ TwoPupils findPupils( cv::Mat faceROI, TwoEyes eyes, cv::Point2f offset ) {
 	//cv::Mat destinationROI = debugFace( roi );
 	//faceROI.copyTo( destinationROI );
 	
-	if ( !kCameraIsHeadmounted ) {
-		debugEye.display(window_name_face);
-	}
+	debugEye.display(window_name_face);
 	
 	return std::make_pair(leftPupil, rightPupil);
 }
