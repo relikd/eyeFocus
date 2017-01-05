@@ -59,8 +59,33 @@ void testPossibleCentersFormula(int x, int y, const cv::Mat &weight, double gx, 
 	});
 }
 
+// Works for me only for headmounted camera, but is up to 300x faster
+cv::Point2f fastEllipseContourFitting(cv::Mat image) {
+	std::vector<std::vector<cv::Point> > contours;
+	std::vector<cv::Vec4i> hierarchy;
+	findContours( image, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE );
+	
+	cv::RotatedRect ellipse;
+	unsigned int maxSize = 4; // we need 5 points for ellipse calculation
+	for (std::vector<cv::Point> vpt : contours) {
+		if (maxSize < vpt.size()) {
+			maxSize = vpt.size();
+			ellipse = fitEllipse(vpt);
+		}
+	}
+	
+//	drawContours( image, contours, -1, 1234);
+//	circle( image, ellipse.center, MAX(ellipse.size.width, ellipse.size.height), 200 ); // theoretically pupil size, but not very reliable
+//	imshow("Contours", image);
+	
+	return ellipse.center;
+}
+
 cv::Point EyeCenter::findEyeCenter(cv::Mat face, cv::Rect eye, std::string debugWindow) {
 	cv::Mat eyeROIUnscaled = face(eye);
+	if (kCameraIsHeadmounted) {
+		return fastEllipseContourFitting(eyeROIUnscaled);
+	}
 	cv::Mat eyeROI;
 	scaleToFastSize(eyeROIUnscaled, eyeROI);
 	
