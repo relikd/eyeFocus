@@ -48,8 +48,14 @@ TwoEyes Headmount::askUserForInput(cv::VideoCapture cam, cv::String window) {
 		
 		cv::flip(frame, frame, 1);
 		
-		for (int i = 0; i < userPoints.size(); i++)
-		{
+		// User instructions
+		cv::String infoText = "Mouse click to select eye regions (ESC undo)";
+		if (userPoints.size() == 4)
+			infoText = "Confirm selection with another click.";
+		cv::putText(frame, infoText, cv::Point(10, frame.rows - 10), cv::FONT_HERSHEY_PLAIN, 2.0f, cv::Scalar(255,255,255));
+		
+		// Draw current selection
+		for (int i = 0; i < userPoints.size(); i++) {
 			circle(frame, userPoints[i], 3, 1234);
 			
 			if ((i % 2) == 0 && (i+1) < userPoints.size())
@@ -57,6 +63,7 @@ TwoEyes Headmount::askUserForInput(cv::VideoCapture cam, cv::String window) {
 		}
 		imshow(window, frame);
 		
+		// Undo selection
 		if( cv::waitKey(300) == 27 ) { // escape key
 			if (userPoints.size() == 0)
 				exit(EXIT_FAILURE);

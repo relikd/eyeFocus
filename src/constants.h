@@ -32,6 +32,6 @@ const float kPostProcessThreshold = 0.97;
 const bool kEnableEyeCorner = false;
 
 // Ask user to select eye reagion upfront. Otherwise find eyes with face detection
-const bool kCameraIsHeadmounted = true;
+const bool kCameraIsHeadmounted = false;
 
 #endif

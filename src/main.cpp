@@ -38,6 +38,12 @@ int main( int argc, const char** argv )
 	cv::moveWindow(window_name_left_eye, 10, 800);
 	
 	
+//	cv::namedWindow("Test1",CV_WINDOW_NORMAL);
+//	cv::moveWindow("Test1", 10, 400);
+//	cv::namedWindow("Test2",CV_WINDOW_NORMAL);
+//	cv::moveWindow("Test2", 10, 500);
+	
+	
 	TwoEyes eyes;
 	cv::Mat frame;
 	cv::Mat faceROI;
@@ -137,7 +143,6 @@ cv::Point2f findPupil( cv::Mat &faceImage, cv::Rect2f &eyeRegion, bool isLeftEye
 	return cv::Point2f();
 }
 
-
 TwoPupils findPupils( cv::Mat faceROI, TwoEyes eyes, cv::Point2f offset ) {
 	debugEye.setImage(faceROI);
 	
@@ -145,7 +150,8 @@ TwoPupils findPupils( cv::Mat faceROI, TwoEyes eyes, cv::Point2f offset ) {
 	cv::Point2f leftPupil = findPupil( faceROI, eyes.first, true ) + offset;
 	cv::Point2f rightPupil = findPupil( faceROI, eyes.second, false ) + offset;
 	
-	printf("L[%1.1f,%1.1f] - R[%1.1f,%1.1f]\n", leftPupil.x, leftPupil.y, rightPupil.x, rightPupil.y);
+	float eyeDistance = cv::norm(leftPupil - rightPupil);
+	printf("L[%1.0f,%1.0f] - R[%1.0f,%1.0f] (distance: %1.1f)\n", leftPupil.x, leftPupil.y, rightPupil.x, rightPupil.y, eyeDistance);
 	
 	//cv::Rect roi( cv::Point( 0, 0 ), faceROI.size());
 	//cv::Mat destinationROI = debugFace( roi );

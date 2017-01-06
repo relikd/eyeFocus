@@ -83,9 +83,9 @@ cv::Point2f fastEllipseContourFitting(cv::Mat image) {
 
 cv::Point EyeCenter::findEyeCenter(cv::Mat face, cv::Rect eye, std::string debugWindow) {
 	cv::Mat eyeROIUnscaled = face(eye);
-	if (kCameraIsHeadmounted) {
-		return fastEllipseContourFitting(eyeROIUnscaled);
-	}
+//	if (kCameraIsHeadmounted) { // doesn't work so well anyway
+//		return fastEllipseContourFitting(eyeROIUnscaled);
+//	}
 	cv::Mat eyeROI;
 	scaleToFastSize(eyeROIUnscaled, eyeROI);
 	
@@ -132,7 +132,7 @@ cv::Point EyeCenter::findEyeCenter(cv::Mat face, cv::Rect eye, std::string debug
 	// Note: these loops are reversed from the way the paper does them
 	// it evaluates every possible center for each gradient location instead of
 	// every possible gradient location for every center.
-	printf("Eye Size: %ix%i\n",outSum.cols,outSum.rows);
+//	printf("Eye Size: %ix%i\n",outSum.cols,outSum.rows);
 	gradientX.forEach<double>([&gradientY, &weight, &outSum](const double &gX, const int position[]) {
 		const int y = position[0];
 		const int x = position[1];
