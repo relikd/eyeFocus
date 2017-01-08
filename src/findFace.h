@@ -1,10 +1,9 @@
 #ifndef findFace_h
 #define findFace_h
 
+#include "constants.h"
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/objdetect/objdetect.hpp>
-
-typedef std::pair<cv::Rect2f, cv::Rect2f> TwoEyes;
 
 namespace Detector {
 	class Face {
@@ -19,7 +18,7 @@ namespace Detector {
 			}
 		};
 		cv::Rect findFace(cv::Mat &frame_gray);
-		TwoEyes findEyes(cv::Mat &faceROI);
+		RectPair findEyes(cv::Mat &faceROI);
 	};
 }
 

@@ -1,8 +1,8 @@
-#include "findHeadmount.h"
+#include "setupHeadmount.h"
 
 #include <fstream>
 
-using namespace Detector;
+using namespace Setup;
 
 static const char* preloadPosition = "../../../res/headmount_pos.txt";
 static std::vector<cv::Point> userPoints;
@@ -22,7 +22,7 @@ cv::Rect arrangePoints(cv::Point a, cv::Point b) {
 	return r;
 }
 
-TwoEyes Headmount::askUserForInput(cv::VideoCapture cam, cv::String window) {
+RectPair Headmount::askUserForInput(cv::VideoCapture cam, cv::String window) {
 	cv::Mat frame;
 	
 	FILE *file = fopen(preloadPosition, "r");

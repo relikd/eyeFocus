@@ -28,7 +28,7 @@ cv::Rect Face::findFace(cv::Mat &frame_gray) {
 	return cv::Rect();
 }
 
-TwoEyes Face::findEyes(cv::Mat &faceROI) {
+RectPair Face::findEyes(cv::Mat &faceROI) {
 	if (kSmoothFaceImage) {
 		double sigma = kSmoothFaceFactor * faceROI.cols;
 		GaussianBlur( faceROI, faceROI, cv::Size( 0, 0 ), sigma);

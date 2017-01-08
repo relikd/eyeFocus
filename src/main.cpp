@@ -4,9 +4,10 @@
 #include "constants.h"
 
 #include "findFace.h"
-#include "findHeadmount.h"
 #include "findEyeCenter.h"
 #include "findEyeCorner.h"
+#include "setupEyeCoordinateSpace.h"
+#include "setupHeadmount.h"
 
 /** Global variables */
 #define CAMERA_SOURCE 0 //-1
@@ -19,8 +20,7 @@ static Detector::Face detectFace = Detector::Face("../../../res/haarcascade_fron
 static Detector::EyeCenter detectCenter = Detector::EyeCenter();
 static Detector::EyeCorner detectCorner = Detector::EyeCorner();
 
-typedef std::pair<cv::Point2f, cv::Point2f> TwoPupils;
-TwoPupils findPupils( cv::Mat faceROI, TwoEyes eyes, cv::Point2f offset );
+PointPair findPupils( cv::Mat faceROI, RectPair eyes, cv::Point2f offset );
 
 int main( int argc, const char** argv )
 {
@@ -44,15 +44,18 @@ int main( int argc, const char** argv )
 //	cv::moveWindow("Test2", 10, 500);
 	
 	
-	TwoEyes eyes;
+	RectPair eyes;
 	cv::Mat frame;
 	cv::Mat faceROI;
 	cv::Point2f headOffset;
 	std::vector<cv::Mat> rgbChannels(3);
 	
 	if (kCameraIsHeadmounted) {
-		eyes = Detector::Headmount::askUserForInput(capture, window_name_main);
+		eyes = Setup::Headmount::askUserForInput(capture, window_name_main);
 	}
+	
+	Setup::EyeCoordinateSpace ecs = Setup::EyeCoordinateSpace();
+	bool continueECSSetup = true;
 	
 	while ( true ) {
 		capture.read(frame);
@@ -81,17 +84,21 @@ int main( int argc, const char** argv )
 			eyes = detectFace.findEyes(faceROI);
 		}
 		
-		TwoPupils pupils = findPupils( faceROI, eyes, headOffset );
+		PointPair pupils = findPupils( faceROI, eyes, headOffset );
+		
+		if (continueECSSetup) {
+			continueECSSetup = ecs.waitForInput(debugMain.getImage(), eyes, pupils, headOffset);
+		} else {
+			int c = cv::waitKey(10);
+			if( (char)c == 27 ) { break; } // esc key
+			if( (char)c == 'f' ) {
+				imwrite("frame.png",frame);
+			}
+		}
 		
 		debugMain.addCircle(pupils.first);
 		debugMain.addCircle(pupils.second);
 		debugMain.display(window_name_main);
-		
-		int c = cv::waitKey(10);
-		if( (char)c == 27 ) { break; } // esc key
-		if( (char)c == 'f' ) {
-			imwrite("frame.png",frame);
-		}
 	}
 	
 	return EXIT_SUCCESS;
@@ -143,7 +150,7 @@ cv::Point2f findPupil( cv::Mat &faceImage, cv::Rect2f &eyeRegion, bool isLeftEye
 	return cv::Point2f();
 }
 
-TwoPupils findPupils( cv::Mat faceROI, TwoEyes eyes, cv::Point2f offset ) {
+PointPair findPupils( cv::Mat faceROI, RectPair eyes, cv::Point2f offset ) {
 	debugEye.setImage(faceROI);
 	
 	//-- Find Eye Centers

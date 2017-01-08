@@ -1,6 +1,12 @@
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
 
+#include <opencv2/imgproc/imgproc.hpp>
+
+typedef std::pair<cv::Point2f, cv::Point2f> PointPair;
+typedef std::pair<cv::Rect2f, cv::Rect2f> RectPair;
+
+
 const cv::String window_name_main = "Capture - Face detection";
 const cv::String window_name_face = "Capture - Face";
 const cv::String window_name_left_eye  = "Left Eye";
