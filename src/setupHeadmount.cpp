@@ -10,7 +10,8 @@ static std::vector<cv::Point> userPoints;
 void mouseHandler(int event, int x, int y, int flags, void* param) {
 	switch(event) {
 		case CV_EVENT_LBUTTONUP:
-			userPoints.push_back(cv::Point(x,y));
+			if (userPoints.size() < 4)
+				userPoints.push_back(cv::Point(x,y));
 			break;
 	}
 }
@@ -22,25 +23,34 @@ cv::Rect arrangePoints(cv::Point a, cv::Point b) {
 	return r;
 }
 
-RectPair Headmount::askUserForInput(cv::VideoCapture cam, cv::String window) {
-	cv::Mat frame;
-	
-	FILE *file = fopen(preloadPosition, "r");
-	bool shouldWriteToFile = true;
+void loadFromFile(const char* path) {
+	FILE *file = fopen(path, "r");
 	cv::Point ltl, lbr, rtl, rbr;
 	if ( file && fscanf(file, "[%d %d] [%d %d] - [%d %d] [%d %d]\n", &ltl.x, &ltl.y, &lbr.x, &lbr.y, &rtl.x, &rtl.y, &rbr.x, &rbr.y) ) {
 		userPoints.push_back(ltl);
 		userPoints.push_back(lbr);
 		userPoints.push_back(rtl);
 		userPoints.push_back(rbr);
-		userPoints.push_back(ltl); // because 5 points are needed for manual setup
-		shouldWriteToFile = false;
 	}
 	fclose(file);
+}
+
+void saveToFile(const char* path) {
+	std::ofstream outputStream(path);
+	outputStream
+	<< "[" << userPoints[0].x << " " << userPoints[0].y << "] "
+	<< "[" << userPoints[1].x << " " << userPoints[1].y << "] - "
+	<< "[" << userPoints[2].x << " " << userPoints[2].y << "] "
+	<< "[" << userPoints[3].x << " " << userPoints[3].y << "]\n";
+	outputStream.close();
+}
+
+RectPair Headmount::askUserForInput(cv::VideoCapture cam, cv::String window) {
+	cv::Mat frame;
 	
 	setMouseCallback(window, mouseHandler, NULL);
 	
-	while (userPoints.size() < 5) { // + 1 to allow redo with esc key
+	while (true) {
 		
 		cam.read(frame);
 		if (frame.empty())
@@ -51,7 +61,7 @@ RectPair Headmount::askUserForInput(cv::VideoCapture cam, cv::String window) {
 		// User instructions
 		cv::String infoText = "Mouse click to select eye regions (ESC undo)";
 		if (userPoints.size() == 4)
-			infoText = "Confirm selection with another click.";
+			infoText = "Confirm selection with spacebar.";
 		cv::putText(frame, infoText, cv::Point(10, frame.rows - 10), cv::FONT_HERSHEY_PLAIN, 2.0f, cv::Scalar(255,255,255));
 		
 		// Draw current selection
@@ -63,25 +73,30 @@ RectPair Headmount::askUserForInput(cv::VideoCapture cam, cv::String window) {
 		}
 		imshow(window, frame);
 		
-		// Undo selection
-		if( cv::waitKey(300) == 27 ) { // escape key
+		
+		int key = cv::waitKey(300);
+		if( key == 27 ) // escape key, undo selection
+		{
 			if (userPoints.size() == 0)
 				exit(EXIT_FAILURE);
+			// Undo selection
 			userPoints.pop_back();
+		}
+		else if ( key == 'l' )  // L, load file
+		{
+			loadFromFile(preloadPosition);
+		}
+		else if ( key == ' ' ) // spacebar, confirm selection
+		{
+			if (userPoints.size() == 4)
+				break;
 		}
 	}
 	
+	saveToFile(preloadPosition);
+	
 	setMouseCallback(window, nullptr, NULL);
 	
-	if (shouldWriteToFile) {
-		std::ofstream outputStream(preloadPosition);
-		outputStream
-		<< "[" << userPoints[0].x << " " << userPoints[0].y << "] "
-		<< "[" << userPoints[1].x << " " << userPoints[1].y << "] - "
-		<< "[" << userPoints[2].x << " " << userPoints[2].y << "] "
-		<< "[" << userPoints[3].x << " " << userPoints[3].y << "]\n";
-		outputStream.close();
-	}
 	
 	cv::Rect l = arrangePoints(userPoints[0], userPoints[1]);
 	cv::Rect r = arrangePoints(userPoints[2], userPoints[3]);
