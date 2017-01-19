@@ -6,7 +6,7 @@
 namespace Detector {
 	class EyeCenter {
 	public:
-		static cv::Point findEyeCenter(cv::Mat face, cv::Rect eye, std::string debugWindow);
+		static cv::Point2f findEyeCenter(cv::Mat face, cv::Rect eye, std::string debugWindow);
 	};
 }
 

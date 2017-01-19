@@ -4,6 +4,7 @@
 #include <queue>
 
 #include "constants.h"
+#include "helper.h"
 
 
 using namespace Detector;
@@ -13,11 +14,9 @@ cv::Mat floodKillEdges(cv::Mat &mat);
 
 #pragma mark Helpers
 
-cv::Point unscalePoint(cv::Point p, cv::Rect origSize) {
+cv::Point2f unscalePoint(cv::Point2f p, cv::Rect origSize) {
 	float ratio = (((float)kFastEyeWidth)/origSize.width);
-	int x = round(p.x / ratio);
-	int y = round(p.y / ratio);
-	return cv::Point(x,y);
+	return cv::Point2f( p.x / ratio , p.y / ratio );
 }
 
 void scaleToFastSize(const cv::Mat &src,cv::Mat &dst) {
@@ -31,6 +30,21 @@ double computeDynamicThreshold(const cv::Mat &mat, double stdDevFactor) {
 	return stdDevFactor * stdDev + meanMagnGrad[0];
 }
 
+cv::Point2f findSubPixelPoint(cv::Point point, cv::Mat gradientMat) {
+	if (point.x == 0 || point.y == 0 || point.y + 1 >= gradientMat.rows || point.x + 1 >= gradientMat.cols)
+		return point;
+	
+	float maxVal = gradientMat.ptr<float>(point.y)[point.x];
+	cv::Point2f centerOffset = cv::Point2f(0,0);
+	cv::Mat searchArea = gradientMat(cv::Rect(point.x-1, point.y-1, 3, 3)); // 9 x 9
+	
+	searchArea.forEach<float>([&](float &val, const int pos[]) {
+		cv::Point2f pointOffset = cv::Point2f(pos[1] - 1, pos[0] - 1);
+		centerOffset += pointOffset * (val / maxVal);
+	});
+	
+	return cv::Point2f(point.x + centerOffset.x, point.y + centerOffset.y);
+}
 
 #pragma mark Main Algorithm
 
@@ -81,7 +95,7 @@ cv::Point2f fastEllipseContourFitting(cv::Mat image) {
 	return ellipse.center;
 }
 
-cv::Point EyeCenter::findEyeCenter(cv::Mat face, cv::Rect eye, std::string debugWindow) {
+cv::Point2f EyeCenter::findEyeCenter(cv::Mat face, cv::Rect eye, std::string debugWindow) {
 	cv::Mat eyeROIUnscaled = face(eye);
 //	if (kCameraIsHeadmounted) { // doesn't work so well anyway
 //		return fastEllipseContourFitting(eyeROIUnscaled);
@@ -127,7 +141,7 @@ cv::Point EyeCenter::findEyeCenter(cv::Mat face, cv::Rect eye, std::string debug
 	
 //	imshow(debugWindow,weight);
 	//-- Run the algorithm!
-	cv::Mat outSum = cv::Mat::zeros(eyeROI.rows,eyeROI.cols,CV_64F);
+	cv::Mat outSum = cv::Mat::zeros(eyeROI.rows, eyeROI.cols, CV_64F);
 	// for each possible gradient location
 	// Note: these loops are reversed from the way the paper does them
 	// it evaluates every possible center for each gradient location instead of
@@ -144,14 +158,14 @@ cv::Point EyeCenter::findEyeCenter(cv::Mat face, cv::Rect eye, std::string debug
 	}); // 1.6x faster
 	
 	// scale all the values down, basically averaging them
-	double numGradients = (weight.rows*weight.cols);
+	double numGradients = (weight.rows * weight.cols);
 	cv::Mat out;
-	outSum.convertTo(out, CV_32F,1.0/numGradients);
+	outSum.convertTo(out, CV_32F, 1.0/numGradients);
 //	imshow(debugWindow,out);
 	//-- Find the maximum point
 	cv::Point maxP;
 	double maxVal;
-	cv::minMaxLoc(out, NULL,&maxVal,NULL,&maxP);
+	cv::minMaxLoc(out, NULL, &maxVal, NULL, &maxP);
 	//-- Flood fill the edges
 	if(kEnablePostProcess) {
 		cv::Mat floodClone;
@@ -163,9 +177,16 @@ cv::Point EyeCenter::findEyeCenter(cv::Mat face, cv::Rect eye, std::string debug
 //		imshow(debugWindow + " Mask",mask);
 //		imshow(debugWindow,out);
 		// redo max
-		cv::minMaxLoc(out, NULL,&maxVal,NULL,&maxP,mask);
+		cv::minMaxLoc(out, NULL, &maxVal, NULL, &maxP, mask);
 	}
-	return unscalePoint(maxP,eye);
+	
+	// Print eye center gradient
+//	cv::Mat outtmp;
+//	floodClone.convertTo(outtmp, CV_32F, 1.0/maxVal);
+//	imshow(debugWindow,outtmp);
+	
+	cv::Point2f subpxCenter = findSubPixelPoint(maxP, out);
+	return unscalePoint(subpxCenter, eye);
 }
 
 #pragma mark Postprocessing

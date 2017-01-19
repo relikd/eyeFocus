@@ -55,7 +55,7 @@ int main( int argc, const char** argv )
 	}
 	
 	Setup::EyeCoordinateSpace ecs = Setup::EyeCoordinateSpace();
-	bool continueECSSetup = true;
+	bool continueECSSetup = false;
 	
 	while ( true ) {
 		capture.read(frame);
@@ -158,7 +158,7 @@ PointPair findPupils( cv::Mat faceROI, RectPair eyes, cv::Point2f offset ) {
 	cv::Point2f rightPupil = findPupil( faceROI, eyes.second, false ) + offset;
 	
 	float eyeDistance = cv::norm(leftPupil - rightPupil);
-	printf("L[%1.0f,%1.0f] - R[%1.0f,%1.0f] (distance: %1.1f)\n", leftPupil.x, leftPupil.y, rightPupil.x, rightPupil.y, eyeDistance);
+	printf("L[%1.1f,%1.1f] - R[%1.1f,%1.1f] (distance: %1.1f)\n", leftPupil.x, leftPupil.y, rightPupil.x, rightPupil.y, eyeDistance);
 	
 	//cv::Rect roi( cv::Point( 0, 0 ), faceROI.size());
 	//cv::Mat destinationROI = debugFace( roi );
