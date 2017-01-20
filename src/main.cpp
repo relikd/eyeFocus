@@ -130,8 +130,17 @@ cv::Point2f findPupil( cv::Mat &faceImage, cv::Rect2f &eyeRegion, bool isLeftEye
 	if (eyeRegion.area()) {
 		cv::Point2f pupil = detectCenter.findEyeCenter(faceImage, eyeRegion, (isLeftEye ? window_name_left_eye : window_name_right_eye) );
 		
-		if (pupil.x < 0.001f || pupil.y < 0.001f)
-			return cv::Point2f();
+		if (pupil.x < 5 || pupil.y < 5) {
+			if (kUseKalmanFilter) {
+				// Reuse last point if no pupil found (eg. eyelid closed)
+				cv::Mat prevPos = (isLeftEye ? KFL : KFR).statePre;
+				pupil = cv::Point2f(prevPos.at<float>(0), prevPos.at<float>(1));
+			} else {
+				// pupil position can be != 0 since it is upscaled in the previous process
+				// we have to reset it to actual 0,0 to indicate a 'not found'
+				pupil = cv::Point2f();
+			}
+		}
 		
 		if (kUseKalmanFilter) {
 			// 1. Prediction
