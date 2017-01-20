@@ -25,10 +25,10 @@ void Debug::display(cv::String window_name) {
 }
 
 // Plotting
-void Debug::addRectangle(cv::Rect r, cv::Scalar color) {
+void Debug::addRectangle(cv::Rect2f r, cv::Scalar color) {
 	rectangle(debugImage, r, color);
 }
 
-void Debug::addCircle(cv::Point p, cv::Scalar color) {
+void Debug::addCircle(cv::Point2f p, cv::Scalar color) {
 	circle(debugImage, p, 3, color);
 };

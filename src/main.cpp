@@ -1,4 +1,5 @@
 #include <opencv2/highgui/highgui.hpp>
+#include "opencv2/video/tracking.hpp"
 
 #include "Debug.h"
 #include "constants.h"
@@ -14,6 +15,9 @@
 
 static Debug debugMain(MainWindow);
 static Debug debugEye(EyeImage);
+static cv::KalmanFilter KFL(4,2,0); // left pupil
+static cv::KalmanFilter KFR(4,2,0); // right pupil
+
 
 //-- Note, either copy these two files from opencv/data/haarscascades to your current folder, or change these locations
 static Detector::Face detectFace = Detector::Face("../../../res/haarcascade_frontalface_alt.xml");
@@ -43,6 +47,21 @@ int main( int argc, const char** argv )
 //	cv::namedWindow("Test2",CV_WINDOW_NORMAL);
 //	cv::moveWindow("Test2", 10, 500);
 	
+	
+	// Init Kalman filter
+	if (kUseKalmanFilter) {
+		KFL.transitionMatrix = (cv::Mat_<float>(4, 4) << 1,0,1,0,   0,1,0,1,  0,0,1,0,  0,0,0,1);
+		KFR.transitionMatrix = (cv::Mat_<float>(4, 4) << 1,0,1,0,   0,1,0,1,  0,0,1,0,  0,0,0,1);
+		
+		setIdentity(KFL.measurementMatrix);
+		setIdentity(KFL.processNoiseCov, cv::Scalar::all(kKalmanProcessError));
+		setIdentity(KFL.measurementNoiseCov, cv::Scalar::all(kKalmanMeasureError)); // error in measurement
+		setIdentity(KFL.errorCovPost, cv::Scalar::all(kKalmanInitialError));
+		setIdentity(KFR.measurementMatrix);
+		setIdentity(KFR.processNoiseCov, cv::Scalar::all(kKalmanProcessError));
+		setIdentity(KFR.measurementNoiseCov, cv::Scalar::all(kKalmanMeasureError));
+		setIdentity(KFR.errorCovPost, cv::Scalar::all(kKalmanInitialError));
+	}
 	
 	RectPair eyes;
 	cv::Mat frame;
@@ -110,6 +129,27 @@ cv::Point2f findPupil( cv::Mat &faceImage, cv::Rect2f &eyeRegion, bool isLeftEye
 {
 	if (eyeRegion.area()) {
 		cv::Point2f pupil = detectCenter.findEyeCenter(faceImage, eyeRegion, (isLeftEye ? window_name_left_eye : window_name_right_eye) );
+		
+		if (pupil.x < 0.001f || pupil.y < 0.001f)
+			return cv::Point2f();
+		
+		if (kUseKalmanFilter) {
+			// 1. Prediction
+			cv::Mat prediction = (isLeftEye ? KFL : KFR).predict();
+			cv::Point2f predictPt(prediction.at<float>(0),prediction.at<float>(1));
+			
+			// 2. Get Measured Data
+			cv::Mat_<float> measurement(2,1);
+			measurement(0) = pupil.x;
+			measurement(1) = pupil.y;
+			
+			// 3. Update Status
+			cv::Mat estimated = (isLeftEye ? KFL : KFR).correct(measurement);
+			cv::Point2f statePt(estimated.at<float>(0),estimated.at<float>(1));
+			
+			pupil = statePt;
+		}
+		
 		
 #if DEBUG_PLOT_ENABLED
 		// get tiled eye region

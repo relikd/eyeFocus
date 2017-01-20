@@ -38,6 +38,12 @@ const float kPostProcessThreshold = 0.97;
 const bool kEnableEyeCorner = false;
 
 // Ask user to select eye reagion upfront. Otherwise find eyes with face detection
-const bool kCameraIsHeadmounted = false;
+const bool kCameraIsHeadmounted = true;
+
+// Smooth eye position over time
+const bool kUseKalmanFilter = true;
+const float kKalmanMeasureError = 7.0;
+const float kKalmanProcessError = 0.1;
+const float kKalmanInitialError = 100;
 
 #endif
