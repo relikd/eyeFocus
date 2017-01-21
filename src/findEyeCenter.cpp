@@ -31,7 +31,7 @@ double computeDynamicThreshold(const cv::Mat &mat, double stdDevFactor) {
 }
 
 cv::Point2f findSubPixelPoint(cv::Point point, cv::Mat gradientMat) {
-	if (point.x == 0 || point.y == 0 || point.y + 1 >= gradientMat.rows || point.x + 1 >= gradientMat.cols)
+	if (point.x <= 0 || point.y <= 0 || point.y + 1 >= gradientMat.rows || point.x + 1 >= gradientMat.cols)
 		return point;
 	
 	float maxVal = gradientMat.ptr<float>(point.y)[point.x];
@@ -49,10 +49,13 @@ cv::Point2f findSubPixelPoint(cv::Point point, cv::Mat gradientMat) {
 #pragma mark Main Algorithm
 
 void testPossibleCentersFormula(int x, int y, const cv::Mat &weight, double gx, double gy, cv::Mat &out) {
+	cv::Point midPoint = cv::Point(out.cols / 2, out.rows / 2);
 	out.forEach<double>([&](double &Or, const int position[]) {
 		const int cy = position[0];
 		const int cx = position[1];
-		if (x == cx && y == cy) {
+		if ((x == cx && y == cy) ||
+			(kCameraIsHeadmounted && cv::norm(midPoint - cv::Point(cy, cx)) > midPoint.x)) // mask circle for eye tracking
+		{
 			return;
 		}
 		double dx = x - cx;
@@ -118,14 +121,14 @@ cv::Point2f EyeCenter::findEyeCenter(cv::Mat face, cv::Rect eye, std::string deb
 //	double gradientThresh = 0;
 	//normalize
 	for (int y = 0; y < eyeROI.rows; ++y) {
-		double *Xr = gradientX.ptr<double>(y), *Yr = gradientY.ptr<double>(y);
+		double *Xr = gradientX.ptr<double>(y);
+		double *Yr = gradientY.ptr<double>(y);
 		const double *Mr = mags.ptr<double>(y);
 		for (int x = 0; x < eyeROI.cols; ++x) {
-			double gX = Xr[x], gY = Yr[x];
 			double magnitude = Mr[x];
 			if (magnitude > gradientThresh) {
-				Xr[x] = gX/magnitude;
-				Yr[x] = gY/magnitude;
+				Xr[x] /= magnitude;
+				Yr[x] /= magnitude;
 			} else {
 				Xr[x] = 0.0;
 				Yr[x] = 0.0;
@@ -151,7 +154,7 @@ cv::Point2f EyeCenter::findEyeCenter(cv::Mat face, cv::Rect eye, std::string deb
 		const int y = position[0];
 		const int x = position[1];
 		const double gY = gradientY.ptr<double>(y)[x];
-		if (gX == 0.0 && gY == 0.0) {
+		if (gX < 0.001 && gY < 0.001) {
 			return;
 		}
 		testPossibleCentersFormula(x, y, weight, gX, gY, outSum);
@@ -182,8 +185,8 @@ cv::Point2f EyeCenter::findEyeCenter(cv::Mat face, cv::Rect eye, std::string deb
 	
 	// Print eye center gradient
 //	cv::Mat outtmp;
-//	floodClone.convertTo(outtmp, CV_32F, 1.0/maxVal);
-//	imshow(debugWindow,outtmp);
+//	out.convertTo(outtmp, CV_32F, 1.0/maxVal);
+//	imshow(debugWindow, outtmp);
 	
 	cv::Point2f subpxCenter = findSubPixelPoint(maxP, out);
 	return unscalePoint(subpxCenter, eye);

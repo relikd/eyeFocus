@@ -68,8 +68,10 @@ RectPair Headmount::askUserForInput(cv::VideoCapture cam, cv::String window) {
 		for (int i = 0; i < userPoints.size(); i++) {
 			circle(frame, userPoints[i], 3, 1234);
 			
-			if ((i % 2) == 0 && (i+1) < userPoints.size())
-				rectangle(frame, userPoints[i], userPoints[i+1], 200);
+			if ((i % 2) == 0 && (i+1) < userPoints.size()) {
+				float ptDistance = cv::norm(userPoints[i] - userPoints[i+1]);
+				circle(frame, userPoints[i], ptDistance, 200);
+			}
 		}
 		imshow(window, frame);
 		
@@ -98,8 +100,13 @@ RectPair Headmount::askUserForInput(cv::VideoCapture cam, cv::String window) {
 	setMouseCallback(window, nullptr, NULL);
 	
 	
-	cv::Rect l = arrangePoints(userPoints[0], userPoints[1]);
-	cv::Rect r = arrangePoints(userPoints[2], userPoints[3]);
+	float radiusL = cv::norm(userPoints[0] - userPoints[1]);
+	float radiusR = cv::norm(userPoints[2] - userPoints[3]);
+	cv::Rect l = cv::Rect(userPoints[0].x - radiusL, userPoints[0].y - radiusL, 2*radiusL, 2*radiusL);
+	cv::Rect r = cv::Rect(userPoints[2].x - radiusR, userPoints[2].y - radiusR, 2*radiusR, 2*radiusR);
+	
+//	cv::Rect l = arrangePoints(userPoints[0], userPoints[1]);
+//	cv::Rect r = arrangePoints(userPoints[2], userPoints[3]);
 	if (l.x < r.x) {
 		return std::make_pair(l, r);
 	} else {
