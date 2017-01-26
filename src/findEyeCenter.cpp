@@ -49,15 +49,20 @@ cv::Point2f findSubPixelPoint(cv::Point point, cv::Mat gradientMat) {
 #pragma mark Main Algorithm
 
 void testPossibleCentersFormula(int x, int y, const cv::Mat &weight, double gx, double gy, cv::Mat &out) {
+#if kCameraIsHeadmounted
 	cv::Point midPoint = cv::Point(out.cols / 2, out.rows / 2);
+#endif
+	
 	out.forEach<double>([&](double &Or, const int position[]) {
 		const int cy = position[0];
 		const int cx = position[1];
-		if ((x == cx && y == cy) ||
-			(kCameraIsHeadmounted && cv::norm(midPoint - cv::Point(cy, cx)) > midPoint.x)) // mask circle for eye tracking
-		{
+#if kCameraIsHeadmounted
+		if (cv::norm(midPoint - cv::Point(cy, cx)) > midPoint.x) // mask circle for eye tracking
 			return;
-		}
+#endif
+		if (x == cx && y == cy)
+			return;
+		
 		double dx = x - cx;
 		double dy = y - cy;
 		// normalize d
@@ -100,9 +105,11 @@ cv::Point2f fastEllipseContourFitting(cv::Mat image) {
 
 cv::Point2f EyeCenter::findEyeCenter(cv::Mat face, cv::Rect eye, std::string debugWindow) {
 	cv::Mat eyeROIUnscaled = face(eye);
-//	if (kCameraIsHeadmounted) { // doesn't work so well anyway
-//		return fastEllipseContourFitting(eyeROIUnscaled);
-//	}
+	
+#if kCameraIsHeadmounted // doesn't work so well anyway
+//	return fastEllipseContourFitting(eyeROIUnscaled);
+#endif
+	
 	cv::Mat eyeROI;
 	scaleToFastSize(eyeROIUnscaled, eyeROI);
 	

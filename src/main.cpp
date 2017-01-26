@@ -20,7 +20,9 @@ static cv::KalmanFilter KFR(4,2,0); // right pupil
 
 
 //-- Note, either copy these two files from opencv/data/haarscascades to your current folder, or change these locations
-static Detector::Face detectFace = Detector::Face("../../../res/haarcascade_frontalface_alt.xml");
+#if !kCameraIsHeadmounted
+static Detector::Face detectFace = Detector::Face("res/haarcascade_frontalface_alt.xml");
+#endif
 static Detector::EyeCenter detectCenter = Detector::EyeCenter();
 static Detector::EyeCorner detectCorner = Detector::EyeCorner();
 
@@ -69,9 +71,9 @@ int main( int argc, const char** argv )
 	cv::Point2f headOffset;
 	std::vector<cv::Mat> rgbChannels(3);
 	
-	if (kCameraIsHeadmounted) {
-		eyes = Setup::Headmount::askUserForInput(capture, window_name_main);
-	}
+#if kCameraIsHeadmounted
+	eyes = Setup::Headmount::askUserForInput(capture, window_name_main);
+#endif
 	
 	Setup::EyeCoordinateSpace ecs = Setup::EyeCoordinateSpace();
 	bool continueECSSetup = false;
@@ -92,16 +94,16 @@ int main( int argc, const char** argv )
 		cv::Mat frame_gray = rgbChannels[2];
 		
 		// -- Get eye region
-		if (kCameraIsHeadmounted) {
-			// whole image is 'face' area for eye detection
-			faceROI = frame_gray;
-		} else {
-			// Apply the classifier to the frame
-			cv::Rect face_r = detectFace.findFace(frame_gray);
-			headOffset = face_r.tl();
-			faceROI = frame_gray(face_r);
-			eyes = detectFace.findEyes(faceROI);
-		}
+#if kCameraIsHeadmounted
+		// whole image is 'face' area for eye detection
+		faceROI = frame_gray;
+#else
+		// Apply the classifier to the frame
+		cv::Rect face_r = detectFace.findFace(frame_gray);
+		headOffset = face_r.tl();
+		faceROI = frame_gray(face_r);
+		eyes = detectFace.findEyes(faceROI);
+#endif
 		
 		PointPair pupils = findPupils( faceROI, eyes, headOffset );
 		

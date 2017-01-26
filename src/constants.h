@@ -3,6 +3,9 @@
 
 #include <opencv2/imgproc/imgproc.hpp>
 
+// Ask user to select eye reagion upfront. Otherwise find eyes with face detection
+#define kCameraIsHeadmounted 1
+
 typedef std::pair<cv::Point2f, cv::Point2f> PointPair;
 typedef std::pair<cv::Rect2f, cv::Rect2f> RectPair;
 
@@ -36,9 +39,6 @@ const float kPostProcessThreshold = 0.97;
 
 // Eye Corner
 const bool kEnableEyeCorner = false;
-
-// Ask user to select eye reagion upfront. Otherwise find eyes with face detection
-const bool kCameraIsHeadmounted = true;
 
 // Smooth eye position over time
 const bool kUseKalmanFilter = true;

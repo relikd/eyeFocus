@@ -170,7 +170,8 @@ bool EyeCoordinateSpace::waitForInput(cv::Mat image, RectPair region, PointPair 
 //	}
 	
 	// Horizontal eye line
-	if (kCameraIsHeadmounted == false && positions.size() < 9) {
+#if !kCameraIsHeadmounted
+	if (positions.size() < 9) {
 		// extend horizontal line from one pupil to the other
 		float ratio = (pupil.second.y - pupil.first.y) / (pupil.second.x - pupil.first.x);
 		cv::Point2f a = cv::Point2f(0, pupil.first.y - pupil.first.x * ratio );
@@ -178,7 +179,7 @@ bool EyeCoordinateSpace::waitForInput(cv::Mat image, RectPair region, PointPair 
 		cv::line(image, a, b, SCALAR_WHITE);
 		cv::putText(image, "Try to hold the line as horizontal as possible", cv::Point(10, a.y), cv::FONT_HERSHEY_PLAIN, 1.0f, SCALAR_WHITE);
 	}
-	
+#endif
 	
 	// Display current selection in a separate window
 	if (shouldRedraw) {
