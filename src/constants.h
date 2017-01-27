@@ -5,6 +5,7 @@
 
 // Ask user to select eye reagion upfront. Otherwise find eyes with face detection
 #define kCameraIsHeadmounted 1
+#define kSetupEyeCoordinateSpace 0
 
 typedef std::pair<cv::Point2f, cv::Point2f> PointPair;
 typedef std::pair<cv::Rect2f, cv::Rect2f> RectPair;
@@ -42,8 +43,8 @@ const bool kEnableEyeCorner = false;
 
 // Smooth eye position over time
 const bool kUseKalmanFilter = true;
-const float kKalmanMeasureError = 7.0;
-const float kKalmanProcessError = 0.1;
-const float kKalmanInitialError = 100;
+const float kKalmanMeasureError = 150;
+const float kKalmanProcessError = 1e-7;
+const float kKalmanInitialError = 100000; // very large to jump to first position immediately
 
 #endif

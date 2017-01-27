@@ -7,8 +7,20 @@
 
 namespace Setup {
 	class Headmount {
+		std::vector<cv::Point> userPoints;
+		const cv::String windowName;
+		const char* savePath;
+		
+		
 	public:
-		static RectPair askUserForInput(cv::VideoCapture cam, cv::String window);
+		Headmount(const cv::String window, const char* file = NULL) : windowName(window), savePath(file) {
+			setMouseCallback(window, mouseHandler, &userPoints);
+		}
+		
+		bool waitForInput(cv::Mat frame, RectPair *eyeRegion);
+		
+	private:
+		static void mouseHandler(int event, int x, int y, int flags, void* param);
 	};
 }
 

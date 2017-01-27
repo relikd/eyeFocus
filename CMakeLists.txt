@@ -27,6 +27,10 @@ if (WIN32)
 	set_target_properties( eyeFocus PROPERTIES COMPILE_DEFINITIONS_DEBUG "_CONSOLE" )
 endif()
 
+if (APPLE)
+	SET( CMAKE_PREFIX_PATH "/usr/local/Cellar/opencv3/3.2.0/share/OpenCV/" ) # OpenCVConfig.cmake
+endif()
+
 #set_property( TARGET eyeFocus PROPERTY CXX_STANDARD 11 )
 target_compile_features( eyeFocus PRIVATE cxx_lambdas cxx_binary_literals cxx_nullptr cxx_range_for )
 

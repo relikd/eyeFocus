@@ -19,8 +19,9 @@ const cv::String eye_coordinate_window = "Eye Coordinate System";
 cv::Mat smallerGrayscale(cv::Mat full, cv::Rect2f region, cv::Point2f pupil) {
 	cv::Mat retImg;
 	full(region).copyTo(retImg);
-	cv::cvtColor(retImg, retImg, CV_RGB2GRAY);
-	cv::cvtColor(retImg, retImg, CV_GRAY2RGB);
+	// use this if image is rgb color
+//	cv::cvtColor(retImg, retImg, CV_RGB2GRAY);
+//	cv::cvtColor(retImg, retImg, CV_GRAY2RGB);
 	cv::drawMarker(retImg, pupil - region.tl(), SCALAR_WHITE);
 	cv::resize(retImg, retImg, cv::Size(PREV_WIDTH, PREV_HEIGHT));
 	return retImg;
@@ -124,7 +125,7 @@ bool EyeCoordinateSpace::waitForInput(cv::Mat image, RectPair region, PointPair 
 			sortPositions();
 			//for (PointPair p : positions) { printPointPair(p); }
 			cv::destroyWindow(eye_coordinate_window);
-			return false; // user setup complete
+			return true; // user setup complete
 		}
 		
 		
@@ -142,7 +143,7 @@ bool EyeCoordinateSpace::waitForInput(cv::Mat image, RectPair region, PointPair 
 		if (positions.empty()) {
 			cv::destroyWindow(eye_coordinate_window);
 			//exit(EXIT_FAILURE);
-			return false; // cancel setup
+			return true; // cancel setup
 		}
 		images.pop_back();
 		positions.pop_back();
@@ -183,7 +184,7 @@ bool EyeCoordinateSpace::waitForInput(cv::Mat image, RectPair region, PointPair 
 	
 	// Display current selection in a separate window
 	if (shouldRedraw) {
-		cv::Mat tmp = cv::Mat::zeros(PREV_HEIGHT * 3, PREV_WIDTH * 6, CV_8UC3);
+		cv::Mat tmp = cv::Mat::zeros(PREV_HEIGHT * 3, PREV_WIDTH * 6, CV_8UC1);
 		for (int i = 0; i < images.size(); i++) {
 			int offsetX = PREV_WIDTH * (i % 3);
 			int offsetY = PREV_HEIGHT * (i / 3);
@@ -197,5 +198,5 @@ bool EyeCoordinateSpace::waitForInput(cv::Mat image, RectPair region, PointPair 
 		cv::imshow(eye_coordinate_window, tmp);
 	}
 	
-	return true;
+	return false;
 }
