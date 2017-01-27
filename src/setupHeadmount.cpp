@@ -65,7 +65,24 @@ void Headmount::mouseHandler(int event, int x, int y, int flags, void* param) {
 	}
 }
 
+Headmount::Headmount(const cv::String window, const char* file) : windowName(window), savePath(file)
+{
+	if (file && strlen(file) > 2) // auto load any existing pos for video file
+		userPoints = loadFromFile(savePath);
+	
+	if (userPoints.size() < 4) {
+		setMouseCallback(window, mouseHandler, &userPoints);
+	} else {
+		superFastInit = true;
+	}
+}
+
 bool Headmount::waitForInput(cv::Mat frame, RectPair *eyeRegion) {
+	if (superFastInit) {
+		*eyeRegion = pairFromPoints(userPoints);
+		return true; // user setup complete
+	}
+	
 	// User instructions
 	cv::String infoText = "Mouse click to select eye regions (ESC undo)";
 	if (userPoints.size() == 4)

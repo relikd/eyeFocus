@@ -28,6 +28,7 @@ const bool kSmoothFaceImage = false;
 const float kSmoothFaceFactor = 0.005;
 
 // Algorithm Parameters
+const bool kScaledownEyeImage = true;
 const int kFastEyeWidth = 50;
 const int kWeightBlurSize = 5;
 const bool kEnableWeight = true;

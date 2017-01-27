@@ -37,15 +37,15 @@ cv::VideoCapture initProgram(const char* path) {
 //	cv::namedWindow("Test2",CV_WINDOW_NORMAL);
 //	cv::moveWindow("Test2", 10, 500);
 	
-	sourceIsImageFile = (strlen(path) <= 2); // string is an index number
+	sourceIsImageFile = (strlen(path) > 2); // string is not an index number
 	
 	// create Video Capture from calling argument
 	if (sourceIsImageFile) {
+		return cv::VideoCapture( path );
+	} else {
 		long index = 0;
 		strtol(path, NULL, 10);
 		return cv::VideoCapture( index );
-	} else {
-		return cv::VideoCapture( path );
 	}
 }
 

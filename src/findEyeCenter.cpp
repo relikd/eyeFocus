@@ -111,7 +111,11 @@ cv::Point2f EyeCenter::findEyeCenter(cv::Mat face, cv::Rect eye, std::string deb
 #endif
 	
 	cv::Mat eyeROI;
-	scaleToFastSize(eyeROIUnscaled, eyeROI);
+	if (kScaledownEyeImage)
+		scaleToFastSize(eyeROIUnscaled, eyeROI);
+	else
+		eyeROI = eyeROIUnscaled;
+	
 	
 	//-- Find the gradient
 	cv::Mat gradientX, gradientY;
@@ -196,7 +200,10 @@ cv::Point2f EyeCenter::findEyeCenter(cv::Mat face, cv::Rect eye, std::string deb
 //	imshow(debugWindow, outtmp);
 	
 	cv::Point2f subpxCenter = findSubPixelPoint(maxP, out);
-	return unscalePoint(subpxCenter, eye);
+	if (kScaledownEyeImage)
+		return unscalePoint(subpxCenter, eye);
+	else
+		return subpxCenter;
 }
 
 #pragma mark Postprocessing

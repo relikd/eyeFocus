@@ -9,13 +9,12 @@ namespace Setup {
 	class Headmount {
 		std::vector<cv::Point> userPoints;
 		const cv::String windowName;
-		const char* savePath;
+		const char* savePath = NULL;
+		bool superFastInit = false;
 		
 		
 	public:
-		Headmount(const cv::String window, const char* file = NULL) : windowName(window), savePath(file) {
-			setMouseCallback(window, mouseHandler, &userPoints);
-		}
+		Headmount(const cv::String window, const char* file = NULL);
 		
 		bool waitForInput(cv::Mat frame, RectPair *eyeRegion);
 		
