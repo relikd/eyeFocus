@@ -9,13 +9,14 @@
 
 namespace Detector {
 	class Pupils {
+		FILE* file = NULL;
 		cv::KalmanFilter KFL = cv::KalmanFilter(4,2,0); // left pupil
 		cv::KalmanFilter KFR = cv::KalmanFilter(4,2,0); // right pupil
 		EyeCenter detectCenter = EyeCenter();
 		EyeCorner detectCorner = EyeCorner();
 		
 	public:
-		Pupils() {
+		Pupils(const char* path = NULL) {
 			if (kUseKalmanFilter) { // Init Kalman filter
 				KFL.transitionMatrix = (cv::Mat_<float>(4, 4) << 1,0,1,0,   0,1,0,1,  0,0,1,0,  0,0,0,1);
 				KFR.transitionMatrix = (cv::Mat_<float>(4, 4) << 1,0,1,0,   0,1,0,1,  0,0,1,0,  0,0,0,1);
@@ -31,7 +32,18 @@ namespace Detector {
 				setIdentity(KFR.measurementNoiseCov, cv::Scalar::all(kKalmanMeasureError));
 				setIdentity(KFR.errorCovPost, cv::Scalar::all(kKalmanInitialError));
 			}
+			if (path) {
+#ifdef _WIN32
+				fopen_s(&file, path, "w");
+#else
+				file = fopen(path, "w");
+#endif
+			}
 		};
+		
+		~Pupils() {
+			if (file) fclose(file);
+		}
 		
 		PointPair find( cv::Mat faceROI, RectPair eyes, cv::Point2f offset );
 		

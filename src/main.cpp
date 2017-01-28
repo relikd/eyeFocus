@@ -102,7 +102,10 @@ int main( int argc, const char** argv )
 	cv::Mat faceROI;
 	cv::Point2f headOffset;
 	
-	Detector::Pupils pupils = Detector::Pupils();
+	char pupilPosLogFile[1024];
+	strcpy(pupilPosLogFile, argv[1]);
+	strcat(pupilPosLogFile, ".pupilpos.txt");
+	Detector::Pupils pupils = Detector::Pupils(pupilPosLogFile);
 	
 	while ( true )
 	{
