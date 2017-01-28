@@ -20,6 +20,7 @@ namespace Setup {
 		
 	private:
 		static void mouseHandler(int event, int x, int y, int flags, void* param);
+		void drawInstructionsAndUserSelection(cv::Mat frame);
 	};
 }
 
