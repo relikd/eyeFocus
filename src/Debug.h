@@ -8,7 +8,7 @@ typedef enum {
 	EyeImage = 1
 } DebugStore;
 
-#define DEBUG_PLOT_ENABLED 1
+#define DEBUG_PLOT_ENABLED 0
 
 class Debug {
 	cv::Mat &debugImage;

@@ -5,30 +5,64 @@ using namespace Detector;
 
 static Debug debugEye(EyeImage);
 
+Pupils::Pupils(const char* path) {
+	if (path) {
+#ifdef _WIN32
+		fopen_s(&file, path, "w");
+#else
+		file = fopen(path, "w");
+#endif
+		fprintf(file, "pLx,pLy,pRx,pRy,PupilDistance,cLx,cLy,cRx,cRy,CornerDistance\n");
+	}
+}
+
+void printDebugOutput(FILE* f, cv::Point2f a, cv::Point2f b, bool isCorner) {
+	float dist = cv::norm(a - b);
+	if (isCorner) printf(" | ");
+	printf("%s: ([%1.1f,%1.1f],[%1.1f,%1.1f], dist: %1.1f)", (isCorner?"corner":"pupil"), a.x, a.y, b.x, b.y, dist);
+	if (isCorner) printf("\n");
+	if (f) fprintf(f, "%1.1f,%1.1f,%1.1f,%1.1f,%1.2f%c", a.x, a.y, b.x, b.y, dist, (isCorner?'\n':','));
+}
+
+PointPair Pupils::findCorners( cv::Mat faceROI, RectPair cornerRegion, cv::Point2f offset ) {
+	// find eye corner
+	cv::Point2f leftCorner  = detectCorner.findByAvgColor(faceROI(cornerRegion.first), true);
+	cv::Point2f rightCorner = detectCorner.findByAvgColor(faceROI(cornerRegion.second), false);
+	leftCorner  += offset + cornerRegion.first.tl();
+	rightCorner += offset + cornerRegion.second.tl();
+	
+	printDebugOutput(file, leftCorner, rightCorner, true);
+	
+	return std::make_pair(leftCorner, rightCorner);
+}
+
 PointPair Pupils::find( cv::Mat faceROI, RectPair eyes, cv::Point2f offset ) {
+#if DEBUG_PLOT_ENABLED
 	debugEye.setImage(faceROI);
+#endif
 	
 	//-- Find Eye Centers
 	cv::Point2f leftPupil = findPupil( faceROI, eyes.first, true ) + offset;
 	cv::Point2f rightPupil = findPupil( faceROI, eyes.second, false ) + offset;
 	
-	float eyeDistance = cv::norm(leftPupil - rightPupil);
-	
-	printf("L[%1.1f,%1.1f] - R[%1.1f,%1.1f] (distance: %1.1f)\n",
-		   leftPupil.x, leftPupil.y,
-		   rightPupil.x, rightPupil.y, eyeDistance);
-	
-	if (file) {
-		fprintf(file, "L[%1.1f,%1.1f] - R[%1.1f,%1.1f] (distance: %1.2f)\n",
-				leftPupil.x, leftPupil.y,
-				rightPupil.x, rightPupil.y, eyeDistance);
-	}
+	printDebugOutput(file, leftPupil, rightPupil, false);
+//	float pupilDistance = cv::norm(leftPupil - rightPupil);
+//	
+//	printf("PL[%1.1f,%1.1f] - PR[%1.1f,%1.1f] (dist: %1.1f)",
+//		   leftPupil.x, leftPupil.y, rightPupil.x, rightPupil.y, pupilDistance);
+//	
+//	if (file) {
+//		fprintf(file, "%1.1f,%1.1f,%1.1f,%1.1f,%1.2f,",
+//				leftPupil.x, leftPupil.y, rightPupil.x, rightPupil.y, pupilDistance);
+//	}
 	
 	//cv::Rect roi( cv::Point( 0, 0 ), faceROI.size());
 	//cv::Mat destinationROI = debugFace( roi );
 	//faceROI.copyTo( destinationROI );
 	
+#if DEBUG_PLOT_ENABLED
 	debugEye.display(window_name_face);
+#endif
 	
 	return std::make_pair(leftPupil, rightPupil);
 }
@@ -41,8 +75,7 @@ cv::Point2f Pupils::findPupil( cv::Mat &faceImage, cv::Rect2f &eyeRegion, bool i
 		if (pupil.x < 0.5 && pupil.y < 0.5) {
 			if (kUseKalmanFilter) {
 				// Reuse last point if no pupil found (eg. eyelid closed)
-				cv::Mat prevPos = (isLeftEye ? KFL : KFR).statePre;
-				pupil = cv::Point2f(prevPos.at<float>(0), prevPos.at<float>(1));
+				pupil = (isLeftEye ? KFL : KFR).previousPoint();
 			} else {
 				// reset any near 0,0 value to actual 0,0 to indicate a 'not found'
 				pupil = cv::Point2f();
@@ -50,20 +83,7 @@ cv::Point2f Pupils::findPupil( cv::Mat &faceImage, cv::Rect2f &eyeRegion, bool i
 		}
 		
 		if (kUseKalmanFilter) {
-			// 1. Prediction
-			cv::Mat prediction = (isLeftEye ? KFL : KFR).predict();
-			cv::Point2f predictPt(prediction.at<float>(0),prediction.at<float>(1));
-			
-			// 2. Get Measured Data
-			cv::Mat_<float> measurement(2,1);
-			measurement(0) = pupil.x;
-			measurement(1) = pupil.y;
-			
-			// 3. Update Status
-			cv::Mat estimated = (isLeftEye ? KFL : KFR).correct(measurement);
-			cv::Point2f statePt(estimated.at<float>(0),estimated.at<float>(1));
-			
-			pupil = statePt;
+			pupil = (isLeftEye ? KFL : KFR).smoothedPosition( pupil );
 		}
 		
 		
@@ -84,8 +104,8 @@ cv::Point2f Pupils::findPupil( cv::Mat &faceImage, cv::Rect2f &eyeRegion, bool i
 		rightRegion.width = eyeRegion.width - pupil.x;
 		
 		if (kEnableEyeCorner) {
-			cv::Point2f leftCorner = detectCorner.find(faceImage(leftRegion), isLeftEye, true);
-			cv::Point2f rightCorner = detectCorner.find(faceImage(rightRegion), isLeftEye, false);
+			cv::Point2f leftCorner = detectCorner.find(faceImage(leftRegion), isLeftEye, false);
+			cv::Point2f rightCorner = detectCorner.find(faceImage(rightRegion), isLeftEye, true);
 			debugEye.addCircle( leftCorner + leftRegion.tl() , 200 );
 			debugEye.addCircle( rightCorner + rightRegion.tl() , 200 );
 		}

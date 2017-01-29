@@ -3,14 +3,71 @@
 
 using namespace Detector;
 
+cv::Point2f EyeCorner::findByAvgColor(cv::Mat region, bool left) {
+	double avgValue = cv::sum(region)[0] / (region.cols * region.rows);
+	cv::Mat tmp;
+	cv::GaussianBlur(region, tmp, cv::Size(9,9), 0, 0);
+	cv::threshold(tmp, tmp, avgValue * 0.95, 255, cv::THRESH_BINARY);
+	cv::GaussianBlur(tmp, tmp, cv::Size(9,9), 0, 0);
+	
+	return (left ? kflc : kfrc).smoothedPosition( find(tmp, left, left) );
+	
+//	cv::Canny(tmp, tmp, 0.1, 0.1);
+	
+//	int y = tmp.rows/2;
+//	int x = tmp.cols/2 + (isLeftEye ? -10 : 10);
+//	int val = tmp.at<int>(y,x);
+//	while (x < tmp.cols && x >= 0) {
+//		(isLeftEye ? x++ : x--);
+//		if (tmp.at<int>(y,x) != val)
+//			break;
+//	}
+	//imshow("sdfs", tmp);
+	//cv::waitKey();
+	//cv::circle(tmp, cv::Point(x,y), 3, 200);
+//	return cv::Point2f(x,y);
+	
+//
+//	std::vector<std::vector<cv::Point> > contours;
+//	std::vector<cv::Vec4i> hierarchy;
+//	cv::findContours( tmp, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE );
+//
+//	cv::Point2f corner;
+//	cv::RotatedRect r;
+//	for (std::vector<cv::Point> vpt : contours) {
+//		if (vpt.size() > 50) {
+//			r = fitEllipse(vpt);
+//
+//			float piAngle = (r.angle / 180.0) * M_PI;
+//
+//			if ((isLeftEye && (fabsf(r.angle - 45) < 15.0 || fabsf(r.angle - 225) < 15.0)) ||
+//				(!isLeftEye && (fabsf(r.angle - 135) < 15.0 || fabsf(r.angle - 315) < 15.0)))
+//			{
+//				float dist = r.size.width / 2.0;
+//				corner = r.center + cv::Point2f(cos(piAngle) * dist, sin(piAngle) * dist);
+//			} else {
+//				float dist = r.size.height / 2.0;
+//				corner = r.center + cv::Point2f(cos(piAngle+M_PI_2) * dist, sin(piAngle+M_PI_2) * dist);
+//			}
+//			if (corner.inside(cv::Rect(0,0,tmp.cols,tmp.rows))) {
+//				break;
+//			}
+//		}
+//	}
+//	printf("angle: %f, width: %f, height: %f\n", r.angle, r.size.width, r.size.height);
+//	printf("%1.3f, %1.3f\n", r.center.x, r.center.y);
+//	printf("%1.3f, %1.3f\n", corner.x, corner.y);
+//	cv::ellipse(tmp, r, 200);
+//	cv::circle(tmp, corner, 3, 200);
+//	return tmp;
+}
+
 cv::Point2f EyeCorner::find(cv::Mat region, bool left, bool left2) {
 	cv::Mat cornerMap = eyeCornerMap(region, left, left2);
 	
 	cv::Point maxP;
 	cv::minMaxLoc(cornerMap,NULL,NULL,NULL,&maxP);
 	
-	cv::Point2f maxP2;
-	maxP2 = findSubpixel(cornerMap, maxP);
 	// GFTT
 //	std::vector<cv::Point2f> corners;
 //	cv::goodFeaturesToTrack(region, corners, 500, 0.005, 20);
@@ -19,7 +76,7 @@ cv::Point2f EyeCorner::find(cv::Mat region, bool left, bool left2) {
 //	}
 //	imshow("Corners",region);
 	
-	return maxP2;
+	return findSubpixel(cornerMap, maxP);
 }
 
 // TODO: implement these

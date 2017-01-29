@@ -2,6 +2,7 @@
 #define EYE_CORNER_H
 
 #include <opencv2/imgproc/imgproc.hpp>
+#include "KalmanPoint.hpp"
 
 namespace Detector {
 	class EyeCorner {
@@ -15,6 +16,9 @@ namespace Detector {
 		
 		cv::Mat *leftCornerKernel;
 		cv::Mat *rightCornerKernel;
+		
+		KalmanPoint kflc = KalmanPoint(1e-5, 30, 1000); // left corner
+		KalmanPoint kfrc = KalmanPoint(1e-5, 30, 1000); // right corner
 		
 	public:
 		EyeCorner() {
@@ -31,6 +35,7 @@ namespace Detector {
 		
 		
 		cv::Point2f find(cv::Mat region, bool left, bool left2);
+		cv::Point2f findByAvgColor(cv::Mat region, bool left);
 		
 	private:
 		cv::Mat eyeCornerMap(const cv::Mat &region, bool left, bool left2);
