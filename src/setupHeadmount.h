@@ -16,7 +16,7 @@ namespace Setup {
 	public:
 		Headmount(const cv::String window, const char* file = NULL);
 		
-		bool waitForInput(cv::Mat frame, RectPair *eyeRegion);
+		bool waitForInput(cv::Mat frame, RectPair *eyeRegion, RectPair *eyeCornerRegion);
 		
 	private:
 		static void mouseHandler(int event, int x, int y, int flags, void* param);

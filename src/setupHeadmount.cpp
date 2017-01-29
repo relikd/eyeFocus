@@ -12,6 +12,12 @@ cv::Rect arrangePoints(cv::Point a, cv::Point b) {
 	return r;
 }
 
+cv::Rect rectFromPoint(cv::Point point, float size) {
+	cv::Rect r = cv::Rect(point.x - size, point.y - size, 2*size, 2*size);
+	if (r.y < 0) r.y = 0;
+	return r;
+}
+
 std::vector<cv::Point> loadFromFile(const char* path) {
 	std::vector<cv::Point> points;
 	if (path == NULL)
@@ -59,17 +65,16 @@ void saveToFile(const char* path, std::vector<cv::Point> points) {
 }
 
 RectPair pairFromPoints(std::vector<cv::Point> points) {
-	float radiusL = cv::norm(points[0] - points[1]);
-	float radiusR = cv::norm(points[2] - points[3]);
-	cv::Rect l = cv::Rect(points[0].x - radiusL, points[0].y - radiusL, 2*radiusL, 2*radiusL);
-	cv::Rect r = cv::Rect(points[2].x - radiusR, points[2].y - radiusR, 2*radiusR, 2*radiusR);
-	
-//	cv::Rect l = arrangePoints(points[0], points[1]);
-//	cv::Rect r = arrangePoints(points[2], points[3]);
+	cv::Rect l = rectFromPoint(points[0], cv::norm(points[0] - points[1]));
+	cv::Rect r = rectFromPoint(points[2], cv::norm(points[2] - points[3]));
 	if (l.x < r.x)
 		return std::make_pair(l, r);
 	else
 		return std::make_pair(r, l);
+}
+
+RectPair eyeCornerPair(std::vector<cv::Point> points) {
+	return std::make_pair(rectFromPoint(points[4], kEyeCornerSearchArea), rectFromPoint(points[5], kEyeCornerSearchArea));
 }
 
 void Headmount::mouseHandler(int event, int x, int y, int flags, void* param) {
@@ -111,14 +116,17 @@ void Headmount::drawInstructionsAndUserSelection(cv::Mat frame) {
 				circle(frame, userPoints[i], ptDistance, 200);
 			} else {
 				line(frame, userPoints[i], userPoints[i+1], 200);
+				circle(frame, userPoints[i], 30, 200);
+				circle(frame, userPoints[i+1], 30, 200);
 			}
 		}
 	}
 }
 
-bool Headmount::waitForInput(cv::Mat frame, RectPair *eyeRegion) {
+bool Headmount::waitForInput(cv::Mat frame, RectPair *eyeRegion, RectPair *eyeCornerRegion) {
 	if (superFastInit) {
 		*eyeRegion = pairFromPoints(userPoints);
+		*eyeCornerRegion = eyeCornerPair(userPoints);
 		return true; // user setup complete
 	}
 	
@@ -141,6 +149,7 @@ bool Headmount::waitForInput(cv::Mat frame, RectPair *eyeRegion) {
 				saveToFile(savePath, userPoints);
 				setMouseCallback(windowName, nullptr, NULL);
 				*eyeRegion = pairFromPoints(userPoints);
+				*eyeCornerRegion = eyeCornerPair(userPoints);
 				return true; // user setup complete
 			}
 			break;

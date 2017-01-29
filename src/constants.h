@@ -41,6 +41,7 @@ const float kPostProcessThreshold = 0.97;
 
 // Eye Corner
 const bool kEnableEyeCorner = false;
+const float kEyeCornerSearchArea = 30;
 
 // Smooth eye position over time
 const bool kUseKalmanFilter = true;
