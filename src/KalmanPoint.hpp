@@ -35,7 +35,6 @@ public:
 	}
 	
 	inline cv::Point2f smoothedPosition(cv::Point2f measurement) {
-		return measurement;
 		this->predict();
 		return this->correct(measurement);
 	}

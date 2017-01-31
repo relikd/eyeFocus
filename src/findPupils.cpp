@@ -46,15 +46,6 @@ PointPair Pupils::find( cv::Mat faceROI, RectPair eyes, cv::Point2f offset ) {
 	cv::Point2f rightPupil = findPupil( faceROI, eyes.second, false ) + offset;
 	
 	printDebugOutput(file, leftPupil, rightPupil, false);
-//	float pupilDistance = cv::norm(leftPupil - rightPupil);
-//	
-//	printf("PL[%1.1f,%1.1f] - PR[%1.1f,%1.1f] (dist: %1.1f)",
-//		   leftPupil.x, leftPupil.y, rightPupil.x, rightPupil.y, pupilDistance);
-//	
-//	if (file) {
-//		fprintf(file, "%1.1f,%1.1f,%1.1f,%1.1f,%1.2f,",
-//				leftPupil.x, leftPupil.y, rightPupil.x, rightPupil.y, pupilDistance);
-//	}
 	
 	//cv::Rect roi( cv::Point( 0, 0 ), faceROI.size());
 	//cv::Mat destinationROI = debugFace( roi );
