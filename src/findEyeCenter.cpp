@@ -19,8 +19,9 @@ cv::Point2f unscalePoint(cv::Point2f p, cv::Rect origSize) {
 	return cv::Point2f( p.x / ratio , p.y / ratio );
 }
 
-void scaleToFastSize(const cv::Mat &src,cv::Mat &dst) {
-	cv::resize(src, dst, cv::Size(kFastEyeWidth,(((float)kFastEyeWidth)/src.cols) * src.rows));
+void scaleToFastSize(const cv::Mat &src, cv::Mat &dst) {
+	int relativeHeight = (int)((kFastEyeWidth / (float)src.cols) * src.rows);
+	cv::resize(src, dst, cv::Size(kFastEyeWidth, relativeHeight));
 }
 
 double computeDynamicThreshold(const cv::Mat &mat, double stdDevFactor) {
@@ -39,7 +40,7 @@ cv::Point2f findSubPixelPoint(cv::Point point, cv::Mat gradientMat) {
 	cv::Mat searchArea = gradientMat(cv::Rect(point.x-1, point.y-1, 3, 3)); // 9 x 9
 	
 	searchArea.forEach<float>([&](float &val, const int pos[]) {
-		cv::Point2f pointOffset = cv::Point2f(pos[1] - 1, pos[0] - 1);
+		cv::Point2f pointOffset = cv::Point2f((float)pos[1] - 1, (float)pos[0] - 1);
 		centerOffset += pointOffset * (val / maxVal);
 	});
 	
@@ -88,7 +89,7 @@ cv::Point2f fastEllipseContourFitting(cv::Mat image) {
 	findContours( image, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE );
 	
 	cv::RotatedRect ellipse;
-	unsigned int maxSize = 4; // we need 5 points for ellipse calculation
+	size_t maxSize = 4; // we need 5 points for ellipse calculation
 	for (std::vector<cv::Point> vpt : contours) {
 		if (maxSize < vpt.size()) {
 			maxSize = vpt.size();

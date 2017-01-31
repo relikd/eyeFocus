@@ -58,7 +58,7 @@ double angleOfVector(cv::Point2d reference, cv::Point2d vec) {
 // |
 //  ---------------------------------------------------------------
 
-struct {
+struct AngleSorter {
 	cv::Point2f center;
 	bool operator() (PointPair a, PointPair b) {
 		double angleA = angleOfVector(center, a.first);
@@ -72,7 +72,7 @@ struct {
 	}
 } SortByAngle ;
 
-struct {
+struct EuclideanDistanceSorter {
 	cv::Point2f center;
 	bool operator() (PointPair a, PointPair b) {
 		return (cv::norm(a.first - center) < cv::norm(b.first - center) );
@@ -103,7 +103,7 @@ void EyeCoordinateSpace::sortPositions() {
 	std::sort(positions.begin()+1, positions.end(), SortByAngle);
 }
 
-bool EyeCoordinateSpace::waitForInput(cv::Mat image, RectPair region, PointPair pupil, cv::Point2f faceOffset)
+bool EyeCoordinateSpace::waitForInput(cv::Mat image, RectPair region, PointPair pupil, cv::Point2i faceOffset)
 {
 	bool shouldRedraw = false;
 	
@@ -129,14 +129,14 @@ bool EyeCoordinateSpace::waitForInput(cv::Mat image, RectPair region, PointPair 
 		}
 		
 		
-		cv::Rect2f lr = region.first + faceOffset;
-		cv::Rect2f rr = region.second + faceOffset;
+		cv::Rect2i lr = region.first + faceOffset;
+		cv::Rect2i rr = region.second + faceOffset;
 		// if pupil found
-		if (lr.tl() != pupil.first && rr.tl() != pupil.second) {
+		/*if (lr.tl() != pupil.first && rr.tl() != (int)pupil.second) {
 			images.push_back(std::make_pair( smallerGrayscale(image, lr, pupil.first), smallerGrayscale(image, rr, pupil.second) ));
 			positions.push_back(std::make_pair( relativePoint(pupil.first, lr), relativePoint(pupil.second, rr) ));
 			shouldRedraw = true;
-		}
+		}*/
 	}
 	else if (key == 27) // esc key
 	{

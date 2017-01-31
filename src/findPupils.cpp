@@ -12,39 +12,46 @@ Pupils::Pupils(const char* path) {
 #else
 		file = fopen(path, "w");
 #endif
-		fprintf(file, "pLx,pLy,pRx,pRy,PupilDistance,cLx,cLy,cRx,cRy,CornerDistance\n");
+		if (file) fprintf(file, "pLx,pLy,pRx,pRy,PupilDistance,cLx,cLy,cRx,cRy,CornerDistance\n");
 	}
 }
 
+inline void addIntOffset(cv::Point2f &base, cv::Point2i offset) {
+	base.x += offset.x;
+	base.y += offset.y;
+}
+
 void printDebugOutput(FILE* f, cv::Point2f a, cv::Point2f b, bool isCorner) {
-	float dist = cv::norm(a - b);
+	double dist = cv::norm(a - b);
 	if (isCorner) printf(" | ");
 	printf("%s: ([%1.1f,%1.1f],[%1.1f,%1.1f], dist: %1.1f)", (isCorner?"corner":"pupil"), a.x, a.y, b.x, b.y, dist);
 	if (isCorner) printf("\n");
 	if (f) fprintf(f, "%1.1f,%1.1f,%1.1f,%1.1f,%1.2f%c", a.x, a.y, b.x, b.y, dist, (isCorner?'\n':','));
 }
 
-PointPair Pupils::findCorners( cv::Mat faceROI, RectPair cornerRegion, cv::Point2f offset ) {
+PointPair Pupils::findCorners( cv::Mat faceROI, RectPair cornerRegion, cv::Point2i offset ) {
 	// find eye corner
 	cv::Point2f leftCorner  = detectCorner.findByAvgColor(faceROI(cornerRegion.first), true);
 	cv::Point2f rightCorner = detectCorner.findByAvgColor(faceROI(cornerRegion.second), false);
-	leftCorner  += offset + cornerRegion.first.tl();
-	rightCorner += offset + cornerRegion.second.tl();
+	addIntOffset(leftCorner, offset + cornerRegion.first.tl());
+	addIntOffset(rightCorner, offset + cornerRegion.second.tl());
 	
 	printDebugOutput(file, leftCorner, rightCorner, true);
 	
 	return std::make_pair(leftCorner, rightCorner);
 }
 
-PointPair Pupils::find( cv::Mat faceROI, RectPair eyes, cv::Point2f offset ) {
+PointPair Pupils::find( cv::Mat faceROI, RectPair eyes, cv::Point2i offset ) {
 #if DEBUG_PLOT_ENABLED
 	debugEye.setImage(faceROI);
 #endif
 	
 	//-- Find Eye Centers
-	cv::Point2f leftPupil = findPupil( faceROI, eyes.first, true ) + offset;
-	cv::Point2f rightPupil = findPupil( faceROI, eyes.second, false ) + offset;
-	
+	cv::Point2f leftPupil = findPupil( faceROI, eyes.first, true );
+	cv::Point2f rightPupil = findPupil( faceROI, eyes.second, false );
+	addIntOffset(leftPupil, offset);
+	addIntOffset(rightPupil, offset);
+
 	printDebugOutput(file, leftPupil, rightPupil, false);
 	
 	//cv::Rect roi( cv::Point( 0, 0 ), faceROI.size());
@@ -58,7 +65,7 @@ PointPair Pupils::find( cv::Mat faceROI, RectPair eyes, cv::Point2f offset ) {
 	return std::make_pair(leftPupil, rightPupil);
 }
 
-cv::Point2f Pupils::findPupil( cv::Mat &faceImage, cv::Rect2f &eyeRegion, bool isLeftEye )
+cv::Point2f Pupils::findPupil( cv::Mat &faceImage, cv::Rect2i &eyeRegion, bool isLeftEye )
 {
 	if (eyeRegion.area()) {
 		cv::Point2f pupil = detectCenter.findEyeCenter(faceImage, eyeRegion, (isLeftEye ? window_name_left_eye : window_name_right_eye) );
@@ -111,8 +118,8 @@ cv::Point2f Pupils::findPupil( cv::Mat &faceImage, cv::Rect2f &eyeRegion, bool i
 		// draw eye center
 		debugEye.addCircle(pupil + eyeRegion.tl());
 #endif
-		
-		return pupil + eyeRegion.tl(); // add offset
+		addIntOffset(pupil, eyeRegion.tl());
+		return pupil;
 	}
 	return cv::Point2f();
 }

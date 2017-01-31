@@ -5,8 +5,10 @@ using namespace Detector;
 cv::Mat skinCrCbHist = cv::Mat::zeros(cv::Size(256, 256), CV_8UC1);
 
 Skin::Skin() {
-	ellipse(skinCrCbHist, cv::Point(113, 155.6), cv::Size(23.4, 15.2),
-			43.0, 0.0, 360.0, cv::Scalar(255, 255, 255), -1);
+	ellipse(skinCrCbHist, cv::Point(113, 156), cv::Size(23, 15),
+		43.0, 0.0, 360.0, cv::Scalar(255, 255, 255), -1);
+	/*ellipse(skinCrCbHist, cv::Point(113, 155.6), cv::Size(23.4, 15.2),
+			43.0, 0.0, 360.0, cv::Scalar(255, 255, 255), -1);*/
 }
 
 cv::Mat Skin::findSkin (cv::Mat &frame) {

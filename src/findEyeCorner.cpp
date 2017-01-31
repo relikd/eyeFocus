@@ -137,6 +137,6 @@ cv::Point2f EyeCorner::findSubpixel(cv::Mat region, cv::Point maxP) {
 	cv::Point maxP2;
 	cv::minMaxLoc(cornerMap, NULL,NULL,NULL,&maxP2);
 	
-	return cv::Point2f(sizeRegion.width / 2 + maxP2.x / 10,
-					   sizeRegion.height / 2 + maxP2.y / 10);
+	return cv::Point2f(sizeRegion.width / 2.0F + maxP2.x / 10.0F,
+					   sizeRegion.height / 2.0F + maxP2.y / 10.0F);
 }

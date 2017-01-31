@@ -8,7 +8,7 @@
 #define kSetupEyeCoordinateSpace 0
 
 typedef std::pair<cv::Point2f, cv::Point2f> PointPair;
-typedef std::pair<cv::Rect2f, cv::Rect2f> RectPair;
+typedef std::pair<cv::Rect2i, cv::Rect2i> RectPair;
 
 
 const cv::String window_name_main = "Capture - Face detection";
@@ -25,7 +25,7 @@ const int kEyePercentWidth = 35;
 
 // Preprocessing
 const bool kSmoothFaceImage = false;
-const float kSmoothFaceFactor = 0.005;
+const float kSmoothFaceFactor = 0.005F;
 
 // Algorithm Parameters
 const bool kScaledownEyeImage = true;
@@ -37,16 +37,16 @@ const double kGradientThreshold = 50.0;
 
 // Postprocessing
 const bool kEnablePostProcess = true;
-const float kPostProcessThreshold = 0.97;
+const float kPostProcessThreshold = 0.97F;
 
 // Eye Corner
 const bool kEnableEyeCorner = false;
-const float kEyeCornerSearchArea = 30;
+const int kEyeCornerSearchArea = 30;
 
 // Smooth eye position over time
 const bool kUseKalmanFilter = true;
 const float kKalmanMeasureError = 150;
-const float kKalmanProcessError = 1e-7;
+const float kKalmanProcessError = 1e-7f;
 const float kKalmanInitialError = 100000; // very large to jump to first position immediately
 
 #endif

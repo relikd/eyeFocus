@@ -17,7 +17,7 @@ namespace Setup {
 	public:
 		std::vector<PointPair> positions;
 		
-		bool waitForInput(cv::Mat image, std::pair<cv::Rect2f, cv::Rect2f> region, std::pair<cv::Point2f, cv::Point2f> pupil, cv::Point2f faceOffset);
+		bool waitForInput(cv::Mat image, RectPair region, PointPair pupil, cv::Point2i faceOffset);
 		
 	private:
 		void sortPositions();

@@ -3,10 +3,10 @@
 
 #include <opencv2/imgproc/imgproc.hpp>
 
-typedef enum {
+enum DebugStore {
 	MainWindow = 0,
 	EyeImage = 1
-} DebugStore;
+};
 
 #define DEBUG_PLOT_ENABLED 0
 

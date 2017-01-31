@@ -35,12 +35,12 @@ RectPair Face::findEyes(cv::Mat &faceROI) {
 	}
 	
 	//-- Find eye regions and draw them
-	int eye_region_width = faceROI.cols * (kEyePercentWidth/100.0);
-	int eye_region_height = faceROI.cols * (kEyePercentHeight/100.0);
-	int eye_region_top = faceROI.rows * (kEyePercentTop/100.0);
-	cv::Rect2f leftEyeRegion(faceROI.cols * (kEyePercentSide/100.0),
+	int eye_region_width = (faceROI.cols * kEyePercentWidth)/100;
+	int eye_region_height = (faceROI.cols * kEyePercentHeight) / 100;
+	int eye_region_top = (faceROI.rows * kEyePercentTop) / 100;
+	cv::Rect2i leftEyeRegion((faceROI.cols * kEyePercentSide) / 100,
 							 eye_region_top, eye_region_width, eye_region_height);
-	cv::Rect2f rightEyeRegion(faceROI.cols - eye_region_width - faceROI.cols * (kEyePercentSide/100.0),
+	cv::Rect2i rightEyeRegion(faceROI.cols - eye_region_width - (faceROI.cols * kEyePercentSide) / 100,
 							  eye_region_top, eye_region_width, eye_region_height);
 	
 	return std::make_pair(leftEyeRegion, rightEyeRegion);

@@ -7,7 +7,7 @@ class KalmanPoint {
 public:
 	cv::KalmanFilter filter = cv::KalmanFilter(4,2,0);
 	
-	KalmanPoint(float processNoise, float measurementNoise, float initialError) {
+	KalmanPoint(double processNoise, double measurementNoise, double initialError) {
 		filter.transitionMatrix = (cv::Mat_<float>(4, 4) << 1,0,1,0,   0,1,0,1,  0,0,1,0,  0,0,0,1);
 		//filter.transitionMatrix = (cv::Mat_<float>(2, 2) << 1,0, 0,1);
 		

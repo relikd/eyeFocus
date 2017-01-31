@@ -5,14 +5,14 @@
 
 using namespace Setup;
 
-cv::Rect arrangePoints(cv::Point a, cv::Point b) {
-	cv::Rect r( fmin(a.x, b.x), fmin(a.y, b.y), 0, 0 );
-	r.width = fmax(a.x, b.x) - r.x;
-	r.height = fmax(a.y, b.y) - r.y;
+cv::Rect2i arrangePoints(cv::Point a, cv::Point b) {
+	cv::Rect r( __min(a.x, b.x), __min(a.y, b.y), 0, 0 );
+	r.width = __max(a.x, b.x) - r.x;
+	r.height = __max(a.y, b.y) - r.y;
 	return r;
 }
 
-cv::Rect rectFromPoint(cv::Point point, float size) {
+cv::Rect2i rectFromPoint(cv::Point point, int size) {
 	cv::Rect r = cv::Rect(point.x - size, point.y - size, 2*size, 2*size);
 	if (r.y < 0) r.y = 0;
 	return r;
@@ -65,8 +65,8 @@ void saveToFile(const char* path, std::vector<cv::Point> points) {
 }
 
 RectPair pairFromPoints(std::vector<cv::Point> points) {
-	cv::Rect l = rectFromPoint(points[0], cv::norm(points[0] - points[1]));
-	cv::Rect r = rectFromPoint(points[2], cv::norm(points[2] - points[3]));
+	cv::Rect2i l = rectFromPoint(points[0], (int)cv::norm(points[0] - points[1]));
+	cv::Rect2i r = rectFromPoint(points[2], (int)cv::norm(points[2] - points[3]));
 	if (l.x < r.x)
 		return std::make_pair(l, r);
 	else
@@ -112,7 +112,7 @@ void Headmount::drawInstructionsAndUserSelection(cv::Mat frame) {
 		
 		if ((i % 2) == 0 && (i+1) < userPoints.size()) {
 			if (i < 4) {
-				float ptDistance = cv::norm(userPoints[i] - userPoints[i+1]);
+				int ptDistance = (int)cv::norm(userPoints[i] - userPoints[i+1]);
 				circle(frame, userPoints[i], ptDistance, 200);
 			} else {
 				line(frame, userPoints[i], userPoints[i+1], 200);
