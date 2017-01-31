@@ -129,10 +129,10 @@ bool EyeCoordinateSpace::waitForInput(cv::Mat image, RectPair region, PointPair 
 		}
 		
 		
-		cv::Rect2i lr = region.first + faceOffset;
+		/*cv::Rect2i lr = region.first + faceOffset;
 		cv::Rect2i rr = region.second + faceOffset;
 		// if pupil found
-		/*if (lr.tl() != pupil.first && rr.tl() != (int)pupil.second) {
+		if (lr.tl() != pupil.first && rr.tl() != (int)pupil.second) {
 			images.push_back(std::make_pair( smallerGrayscale(image, lr, pupil.first), smallerGrayscale(image, rr, pupil.second) ));
 			positions.push_back(std::make_pair( relativePoint(pupil.first, lr), relativePoint(pupil.second, rr) ));
 			shouldRedraw = true;

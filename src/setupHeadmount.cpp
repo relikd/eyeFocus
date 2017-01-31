@@ -6,9 +6,9 @@
 using namespace Setup;
 
 cv::Rect2i arrangePoints(cv::Point a, cv::Point b) {
-	cv::Rect r( __min(a.x, b.x), __min(a.y, b.y), 0, 0 );
-	r.width = __max(a.x, b.x) - r.x;
-	r.height = __max(a.y, b.y) - r.y;
+	cv::Rect r( std::min(a.x, b.x), std::min(a.y, b.y), 0, 0 );
+	r.width = std::max(a.x, b.x) - r.x;
+	r.height = std::max(a.y, b.y) - r.y;
 	return r;
 }
 
