@@ -3,6 +3,7 @@
 #include "findFace.h"
 #include "setupEyeCoordinateSpace.h"
 #include "setupHeadmount.h"
+#include "setupSingleEye.hpp"
 #include "findPupils.hpp"
 
 /** Global variables */
@@ -16,6 +17,7 @@ static Detector::Face detectFace = Detector::Face("res/haarcascade_frontalface_a
 
 enum SetupPhase {
 	SetupHeadmount,
+	SetupSingleEyeCalibration,
 	SetupEyeCoordinateSpace,
 	SetupComplete
 };
@@ -56,7 +58,9 @@ bool grabDownscaledGreyFrame(cv::VideoCapture capture, cv::Mat *frame) {
 		return false;
 	}
 	
+#if !kFullsizeSingleEyeMode // SpeedLink webcam has a low resolution 
 	cv::resize(img, img, cv::Size(img.cols/2, img.rows/2));
+#endif
 	cv::flip(img, img, 1); // mirror it
 	
 	// get gray image from blue channel
@@ -90,6 +94,11 @@ int main( int argc, const char** argv )
 	strcat(headPosFile, ".eyepos.txt");
 	Setup::Headmount setupHead = Setup::Headmount(window_name_main, headPosFile);
 	state = SetupPhase::SetupHeadmount;
+#endif
+	
+#if kFullsizeSingleEyeMode
+	Setup::SingleEye singleEye = Setup::SingleEye(window_name_main);
+	state = SetupPhase::SetupSingleEyeCalibration;
 #endif
 	
 	RectPair eyes;
@@ -127,8 +136,32 @@ int main( int argc, const char** argv )
 			eyes = detectFace.findEyes(faceROI);
 #endif
 			
+			
+#if kFullsizeSingleEyeMode
+			cv::Point2f point = pupils.findSingle( faceROI );
+			circle(frame_gray, point, 3, 1234);
+			if (state == SetupSingleEyeCalibration) {
+				if (!singleEye.waitForInput(frame_gray, point)) {
+					imshow(window_name_main, frame_gray);
+					continue;
+				}
+				state = SetupPhase::SetupComplete;
+			}
+			int est = singleEye.bestEstimate(point);
+			char strEst[6];
+			snprintf(strEst, 6*sizeof(char), "%dcm", est);
+			
+			cv::putText(frame_gray, strEst, cv::Point(frame_gray.cols - 220, 90), cv::FONT_HERSHEY_PLAIN, 5.0f, cv::Scalar(255,255,255));
+			
+#else // find corner ratio for measurement scale
 			PointPair pp = pupils.find( faceROI, eyes, headOffset );
 			PointPair corner = pupils.findCorners( faceROI, eyeCorners, headOffset );
+			// draw pupil center on main image
+			circle(frame_gray, pp.first, 3, 1234);
+			circle(frame_gray, pp.second, 3, 1234);
+			drawMarker(frame_gray, corner.first, 200);
+			drawMarker(frame_gray, corner.second, 200);
+#endif
 			
 			if (state == SetupComplete) {
 				if( cv::waitKey(10) == 27 ) // esc key
@@ -141,11 +174,7 @@ int main( int argc, const char** argv )
 				}
 			}
 #endif
-			// draw pupil center on main image
-			circle(frame_gray, pp.first, 3, 1234);
-			circle(frame_gray, pp.second, 3, 1234);
-			drawMarker(frame_gray, corner.first, 200);
-			drawMarker(frame_gray, corner.second, 200);
+			
 			imshow(window_name_main, frame_gray);
 		}
 	}

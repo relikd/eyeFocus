@@ -1,5 +1,6 @@
 #include "setupHeadmount.h"
 #include <fstream>
+#include <opencv2/highgui/highgui.hpp>
 
 #define USER_POINTS_NEEDED 6
 
@@ -123,7 +124,15 @@ void Headmount::drawInstructionsAndUserSelection(cv::Mat frame) {
 	}
 }
 
-bool Headmount::waitForInput(cv::Mat frame, RectPair *eyeRegion, RectPair *eyeCornerRegion) {
+bool Headmount::waitForInput(cv::Mat frame, RectPair *eyeRegion, RectPair *eyeCornerRegion)
+{
+#if kFullsizeSingleEyeMode
+	cv::Rect2i full = cv::Rect2i(0, 0, frame.cols, frame.rows);
+	*eyeRegion = std::make_pair(full, full);
+	*eyeCornerRegion = std::make_pair(full, full);
+	return true;
+#endif
+	
 	if (superFastInit) {
 		*eyeRegion = pairFromPoints(userPoints);
 		*eyeCornerRegion = eyeCornerPair(userPoints);

@@ -23,10 +23,11 @@ namespace Detector {
 		}
 		
 		PointPair find( cv::Mat faceROI, RectPair eyes, cv::Point2i offset );
+		cv::Point2f findSingle( cv::Mat faceROI );
 		PointPair findCorners( cv::Mat faceROI, RectPair cornerRegion, cv::Point2i offset );
 		
 	private:
-		cv::Point2f findPupil( cv::Mat &faceImage, cv::Rect2i &eyeRegion, bool isLeftEye );
+		cv::Point2f findPupil( cv::Mat faceImage, cv::Rect2i eyeRegion, bool isLeftEye );
 	};
 }
 

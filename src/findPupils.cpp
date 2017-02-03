@@ -41,6 +41,11 @@ PointPair Pupils::findCorners( cv::Mat faceROI, RectPair cornerRegion, cv::Point
 	return std::make_pair(leftCorner, rightCorner);
 }
 
+cv::Point2f Pupils::findSingle( cv::Mat faceROI ) {
+	cv::Rect2i rectWithoutEdge(faceROI.cols*0.1, faceROI.rows*0.1, faceROI.cols*0.8, faceROI.rows*0.8);
+	return findPupil( faceROI, rectWithoutEdge, true );
+}
+
 PointPair Pupils::find( cv::Mat faceROI, RectPair eyes, cv::Point2i offset ) {
 #if DEBUG_PLOT_ENABLED
 	debugEye.setImage(faceROI);
@@ -65,7 +70,7 @@ PointPair Pupils::find( cv::Mat faceROI, RectPair eyes, cv::Point2i offset ) {
 	return std::make_pair(leftPupil, rightPupil);
 }
 
-cv::Point2f Pupils::findPupil( cv::Mat &faceImage, cv::Rect2i &eyeRegion, bool isLeftEye )
+cv::Point2f Pupils::findPupil( cv::Mat faceImage, cv::Rect2i eyeRegion, bool isLeftEye )
 {
 	if (eyeRegion.area()) {
 		cv::Point2f pupil = detectCenter.findEyeCenter(faceImage, eyeRegion, (isLeftEye ? window_name_left_eye : window_name_right_eye) );
