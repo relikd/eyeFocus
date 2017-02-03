@@ -13,40 +13,6 @@ cv::Point2f averagePoint(std::vector<cv::Point2f> points) {
 	return sum;
 }
 
-int SingleEye::bestEstimate(cv::Point2f pupil) {
-	double lowerRange = std::pow(cm50.x / cm20.x, 1/30.0);
-	double upperRange = std::pow(cm80.x / cm50.x, 1/30.0);
-	
-	float initLower = cm20.x * std::pow(lowerRange, -10); // start at 10cm
-	float initUpper = cm50.x;
-	
-	int bestMatchLower = 0;
-	int bestMatchUpper = 0;
-	
-	float diff = 999;
-	do {
-		float newDiff = std::fabs(initLower - pupil.x);
-		if (newDiff > diff) {
-			return 10 + bestMatchLower - 1;
-		}
-		diff = newDiff;
-		initLower *= lowerRange;
-	} while (++bestMatchLower < 40);
-	
-	diff = 999;
-	
-	do {
-		float newDiff = std::fabs(initUpper - pupil.x);
-		if (newDiff > diff) {
-			return 50 + bestMatchUpper - 1;
-		}
-		diff = newDiff;
-		initUpper *= upperRange;
-	} while (++bestMatchUpper < 30);
-	
-	return 100;
-}
-
 bool SingleEye::waitForInput(cv::Mat frame, cv::Point2f pupil) {
 	pupilAverage.push_back(pupil);
 	while (pupilAverage.size() > 10) // limit average to the last x points

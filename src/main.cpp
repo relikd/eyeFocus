@@ -5,6 +5,7 @@
 #include "setupHeadmount.h"
 #include "setupSingleEye.hpp"
 #include "findPupils.hpp"
+#include "estimateDistance.hpp"
 
 /** Global variables */
 static bool sourceIsImageFile;
@@ -111,6 +112,8 @@ int main( int argc, const char** argv )
 	strcat(pupilPosLogFile, ".pupilpos.csv");
 	Detector::Pupils pupils = Detector::Pupils(pupilPosLogFile);
 	
+	Estimate::Distance distEst = Estimate::Distance(!kFullsizeSingleEyeMode);
+	
 	while ( true )
 	{
 		cv::Mat frame_gray;
@@ -147,11 +150,7 @@ int main( int argc, const char** argv )
 				}
 				state = SetupPhase::SetupComplete;
 			}
-			int est = singleEye.bestEstimate(point);
-			char strEst[6];
-			snprintf(strEst, 6*sizeof(char), "%dcm", est);
-			
-			cv::putText(frame_gray, strEst, cv::Point(frame_gray.cols - 220, 90), cv::FONT_HERSHEY_PLAIN, 5.0f, cv::Scalar(255,255,255));
+			int est = Estimate::Distance::singlePupilHorizontal(point.x, singleEye.cm20.x, singleEye.cm50.x, singleEye.cm80.x);
 			
 #else // find corner ratio for measurement scale
 			PointPair pp = pupils.find( faceROI, eyes, headOffset );
@@ -161,7 +160,14 @@ int main( int argc, const char** argv )
 			circle(frame_gray, pp.second, 3, 1234);
 			drawMarker(frame_gray, corner.first, 200);
 			drawMarker(frame_gray, corner.second, 200);
+			// Estimate distance
+			int est = distEst.estimate(pp, corner, true);
 #endif
+			// Print distance 
+			char strEst[6];
+			snprintf(strEst, 6*sizeof(char), "%dcm", est);
+			cv::putText(frame_gray, strEst, cv::Point(frame_gray.cols - 220, 90), cv::FONT_HERSHEY_PLAIN, 5.0f, cv::Scalar(255,255,255));
+			
 			
 			if (state == SetupComplete) {
 				if( cv::waitKey(10) == 27 ) // esc key

@@ -6,7 +6,7 @@
 // Ask user to select eye reagion upfront. Otherwise find eyes with face detection
 #define kCameraIsHeadmounted 1
 #define kSetupEyeCoordinateSpace 0
-#define kFullsizeSingleEyeMode 1 // kCameraIsHeadmounted must be 1
+#define kFullsizeSingleEyeMode 0 // kCameraIsHeadmounted must be 1
 
 typedef std::pair<cv::Point2f, cv::Point2f> PointPair;
 typedef std::pair<cv::Rect2i, cv::Rect2i> RectPair;
