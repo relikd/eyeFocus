@@ -3,8 +3,8 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <queue>
 
-#include "constants.h"
-#include "helper.h"
+#include "../constants.h"
+#include "../Helper/helper.h"
 
 
 using namespace Detector;

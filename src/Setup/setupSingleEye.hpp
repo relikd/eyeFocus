@@ -1,7 +1,7 @@
 #ifndef setupSingleEye_hpp
 #define setupSingleEye_hpp
 
-#include "constants.h"
+#include "../constants.h"
 #include <opencv2/imgproc/imgproc.hpp>
 
 namespace Setup {

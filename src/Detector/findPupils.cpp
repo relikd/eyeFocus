@@ -1,5 +1,6 @@
 #include "findPupils.hpp"
-#include "Debug.h"
+#include "../Helper/Debug.h"
+#include "ExCuSe/algo.h"
 
 using namespace Detector;
 
@@ -73,7 +74,22 @@ PointPair Pupils::find( cv::Mat faceROI, RectPair eyes, cv::Point2i offset ) {
 cv::Point2f Pupils::findPupil( cv::Mat faceImage, cv::Rect2i eyeRegion, bool isLeftEye )
 {
 	if (eyeRegion.area()) {
+#if USE_EXCUSE_EYETRACKING
+		// ExCuSe eye tracking
+		cv::Mat sub = faceImage(eyeRegion);
+		cv::Mat pic_th = cv::Mat::zeros(sub.rows, sub.cols, CV_8U);
+		cv::Mat th_edges = cv::Mat::zeros(sub.rows, sub.cols, CV_8U);
+		cv::RotatedRect elipse = run(&sub, &pic_th, &th_edges, true);
+		cv::Point2f pupil = elipse.center;
+#else
+		// Gradient based eye tracking (Timm)
 		cv::Point2f pupil = detectCenter.findEyeCenter(faceImage, eyeRegion, (isLeftEye ? window_name_left_eye : window_name_right_eye) );
+#endif
+		
+//		cv::Mat empty = cv::Mat::zeros(faceImage.rows, faceImage.cols, CV_8U);
+//		addIntOffset(elipse.center, eyeRegion.tl());
+//		ellipse(empty, elipse, 123);
+//		imshow("tmp", empty);
 		
 		if (pupil.x < 0.5 && pupil.y < 0.5) {
 			if (kUseKalmanFilter) {
@@ -121,9 +137,11 @@ cv::Point2f Pupils::findPupil( cv::Mat faceImage, cv::Rect2i eyeRegion, bool isL
 		debugEye.addRectangle(rightRegion, 200);
 		
 		// draw eye center
-		debugEye.addCircle(pupil + eyeRegion.tl());
-#endif
 		addIntOffset(pupil, eyeRegion.tl());
+		debugEye.addCircle(pupil);
+#else
+		addIntOffset(pupil, eyeRegion.tl());
+#endif
 		return pupil;
 	}
 	return cv::Point2f();

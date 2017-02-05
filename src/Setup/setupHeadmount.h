@@ -1,7 +1,7 @@
 #ifndef SETUP_HEADMOUNT_H
 #define SETUP_HEADMOUNT_H
 
-#include "constants.h"
+#include "../constants.h"
 #include <opencv2/imgproc/imgproc.hpp>
 
 namespace Setup {

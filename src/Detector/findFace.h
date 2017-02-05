@@ -1,7 +1,7 @@
 #ifndef findFace_h
 #define findFace_h
 
-#include "constants.h"
+#include "../constants.h"
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/objdetect/objdetect.hpp>
 

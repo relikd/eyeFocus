@@ -2,7 +2,7 @@
 #define EYE_CORNER_H
 
 #include <opencv2/imgproc/imgproc.hpp>
-#include "KalmanPoint.hpp"
+#include "../Helper/KalmanPoint.hpp"
 
 namespace Detector {
 	class EyeCorner {

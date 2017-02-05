@@ -1,7 +1,7 @@
 #ifndef setupEyeCoordinateSpace_h
 #define setupEyeCoordinateSpace_h
 
-#include "constants.h"
+#include "../constants.h"
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 

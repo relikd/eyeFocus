@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 #include <vector>
-#include "constants.h"
+#include "../constants.h"
 
 namespace Estimate {
 	struct FocalLevel {

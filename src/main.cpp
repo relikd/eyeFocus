@@ -1,11 +1,11 @@
 #include <opencv2/highgui/highgui.hpp>
 #include "constants.h"
-#include "findFace.h"
-#include "setupEyeCoordinateSpace.h"
-#include "setupHeadmount.h"
-#include "setupSingleEye.hpp"
-#include "findPupils.hpp"
-#include "estimateDistance.hpp"
+#include "Setup/setupEyeCoordinateSpace.h"
+#include "Setup/setupHeadmount.h"
+#include "Setup/setupSingleEye.hpp"
+#include "Detector/findFace.h"
+#include "Detector/findPupils.hpp"
+#include "Estimate/estimateDistance.hpp"
 
 /** Global variables */
 static bool sourceIsImageFile;
@@ -161,7 +161,7 @@ int main( int argc, const char** argv )
 			drawMarker(frame_gray, corner.first, 200);
 			drawMarker(frame_gray, corner.second, 200);
 			// Estimate distance
-			int est = distEst.estimate(pp, corner, true);
+			int est = distEst.estimate(pp, corner, false);
 #endif
 			// Print distance 
 			char strEst[6];

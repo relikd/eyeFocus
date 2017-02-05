@@ -1,6 +1,6 @@
 #include "findFace.h"
-#include "constants.h"
-#include "Debug.h"
+#include "../constants.h"
+#include "../Helper/Debug.h"
 
 using namespace Detector;
 
