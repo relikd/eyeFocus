@@ -153,11 +153,13 @@ int main( int argc, const char** argv )
 			int est = Estimate::Distance::singlePupilHorizontal(point.x, singleEye.cm20.x, singleEye.cm50.x, singleEye.cm80.x);
 			
 #else // find corner ratio for measurement scale
-			PointPair pp = pupils.find( faceROI, eyes, headOffset );
+			EllipsePair pp = pupils.find( faceROI, eyes, headOffset );
 			PointPair corner = pupils.findCorners( faceROI, eyeCorners, headOffset );
 			// draw pupil center on main image
-			circle(frame_gray, pp.first, 3, 1234);
-			circle(frame_gray, pp.second, 3, 1234);
+//			ellipse(frame_gray, pp.first, 1234);
+//			ellipse(frame_gray, pp.second, 1234);
+			circle(frame_gray, pp.first.center, 3, 1234);
+			circle(frame_gray, pp.second.center, 3, 1234);
 			drawMarker(frame_gray, corner.first, 200);
 			drawMarker(frame_gray, corner.second, 200);
 			// Estimate distance

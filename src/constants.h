@@ -10,6 +10,7 @@
 
 typedef std::pair<cv::Point2f, cv::Point2f> PointPair;
 typedef std::pair<cv::Rect2i, cv::Rect2i> RectPair;
+typedef std::pair<cv::RotatedRect, cv::RotatedRect> EllipsePair;
 
 
 const cv::String window_name_main = "Capture - Face detection";

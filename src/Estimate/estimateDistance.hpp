@@ -25,7 +25,7 @@ namespace Estimate {
 		};
 		
 		static int singlePupilHorizontal(float x, float cm20, float cm50, float cm80);
-		int estimate(PointPair pupil, PointPair corner, bool byDegrees = true); // otherwise by ratio
+		int estimate(EllipsePair pupil, PointPair corner, bool byDegrees = true); // otherwise by ratio
 		
 	private:
 		void readConfigFile(const char* path);

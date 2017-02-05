@@ -42,23 +42,23 @@ PointPair Pupils::findCorners( cv::Mat faceROI, RectPair cornerRegion, cv::Point
 	return std::make_pair(leftCorner, rightCorner);
 }
 
-cv::Point2f Pupils::findSingle( cv::Mat faceROI ) {
+cv::RotatedRect Pupils::findSingle( cv::Mat faceROI ) {
 	cv::Rect2i rectWithoutEdge(faceROI.cols*0.1, faceROI.rows*0.1, faceROI.cols*0.8, faceROI.rows*0.8);
 	return findPupil( faceROI, rectWithoutEdge, true );
 }
 
-PointPair Pupils::find( cv::Mat faceROI, RectPair eyes, cv::Point2i offset ) {
+EllipsePair Pupils::find( cv::Mat faceROI, RectPair eyes, cv::Point2i offset ) {
 #if DEBUG_PLOT_ENABLED
 	debugEye.setImage(faceROI);
 #endif
 	
 	//-- Find Eye Centers
-	cv::Point2f leftPupil = findPupil( faceROI, eyes.first, true );
-	cv::Point2f rightPupil = findPupil( faceROI, eyes.second, false );
-	addIntOffset(leftPupil, offset);
-	addIntOffset(rightPupil, offset);
+	cv::RotatedRect leftPupil = findPupil( faceROI, eyes.first, true );
+	cv::RotatedRect rightPupil = findPupil( faceROI, eyes.second, false );
+	addIntOffset(leftPupil.center, offset);
+	addIntOffset(rightPupil.center, offset);
 
-	printDebugOutput(file, leftPupil, rightPupil, false);
+	printDebugOutput(file, leftPupil.center, rightPupil.center, false);
 	
 	//cv::Rect roi( cv::Point( 0, 0 ), faceROI.size());
 	//cv::Mat destinationROI = debugFace( roi );
@@ -71,7 +71,7 @@ PointPair Pupils::find( cv::Mat faceROI, RectPair eyes, cv::Point2i offset ) {
 	return std::make_pair(leftPupil, rightPupil);
 }
 
-cv::Point2f Pupils::findPupil( cv::Mat faceImage, cv::Rect2i eyeRegion, bool isLeftEye )
+cv::RotatedRect Pupils::findPupil( cv::Mat faceImage, cv::Rect2i eyeRegion, bool isLeftEye )
 {
 	if (eyeRegion.area()) {
 #if USE_EXCUSE_EYETRACKING
@@ -79,11 +79,11 @@ cv::Point2f Pupils::findPupil( cv::Mat faceImage, cv::Rect2i eyeRegion, bool isL
 		cv::Mat sub = faceImage(eyeRegion);
 		cv::Mat pic_th = cv::Mat::zeros(sub.rows, sub.cols, CV_8U);
 		cv::Mat th_edges = cv::Mat::zeros(sub.rows, sub.cols, CV_8U);
-		cv::RotatedRect elipse = run(&sub, &pic_th, &th_edges, true);
-		cv::Point2f pupil = elipse.center;
+		cv::RotatedRect pupil = run(&sub, &pic_th, &th_edges, true);
 #else
 		// Gradient based eye tracking (Timm)
-		cv::Point2f pupil = detectCenter.findEyeCenter(faceImage, eyeRegion, (isLeftEye ? window_name_left_eye : window_name_right_eye) );
+		cv::RotatedRect pupil;
+		pupil.center = detectCenter.findEyeCenter(faceImage, eyeRegion, (isLeftEye ? window_name_left_eye : window_name_right_eye) );
 #endif
 		
 //		cv::Mat empty = cv::Mat::zeros(faceImage.rows, faceImage.cols, CV_8U);
@@ -91,18 +91,18 @@ cv::Point2f Pupils::findPupil( cv::Mat faceImage, cv::Rect2i eyeRegion, bool isL
 //		ellipse(empty, elipse, 123);
 //		imshow("tmp", empty);
 		
-		if (pupil.x < 0.5 && pupil.y < 0.5) {
+		if (pupil.center.x < 0.5 && pupil.center.y < 0.5) {
 			if (kUseKalmanFilter) {
 				// Reuse last point if no pupil found (eg. eyelid closed)
-				pupil = (isLeftEye ? KFL : KFR).previousPoint();
+				pupil.center = (isLeftEye ? KFL : KFR).previousPoint();
 			} else {
 				// reset any near 0,0 value to actual 0,0 to indicate a 'not found'
-				pupil = cv::Point2f();
+				pupil.center = cv::Point2f();
 			}
 		}
 		
 		if (kUseKalmanFilter) {
-			pupil = (isLeftEye ? KFL : KFR).smoothedPosition( pupil );
+			pupil.center = (isLeftEye ? KFL : KFR).smoothedPosition( pupil.center );
 		}
 		
 		
@@ -115,12 +115,12 @@ cv::Point2f Pupils::findPupil( cv::Mat faceImage, cv::Rect2i eyeRegion, bool isL
 		//  |______|____|
 		//  |           |
 		//  '-----------'
-		cv::Rect2f leftRegion(eyeRegion.x, eyeRegion.y, pupil.x, eyeRegion.height / 2);
+		cv::Rect2f leftRegion(eyeRegion.x, eyeRegion.y, pupil.center.x, eyeRegion.height / 2);
 		leftRegion.y += leftRegion.height / 2;
 		
 		cv::Rect2f rightRegion(leftRegion);
-		rightRegion.x += pupil.x;
-		rightRegion.width = eyeRegion.width - pupil.x;
+		rightRegion.x += pupil.center.x;
+		rightRegion.width = eyeRegion.width - pupil.center.x;
 		
 		if (kEnableEyeCorner) {
 			cv::Point2f leftCorner = detectCorner.find(faceImage(leftRegion), isLeftEye, false);
@@ -137,12 +137,12 @@ cv::Point2f Pupils::findPupil( cv::Mat faceImage, cv::Rect2i eyeRegion, bool isL
 		debugEye.addRectangle(rightRegion, 200);
 		
 		// draw eye center
-		addIntOffset(pupil, eyeRegion.tl());
-		debugEye.addCircle(pupil);
+		addIntOffset(pupil.center, eyeRegion.tl());
+		debugEye.addCircle(pupil.center);
 #else
-		addIntOffset(pupil, eyeRegion.tl());
+		addIntOffset(pupil.center, eyeRegion.tl());
 #endif
 		return pupil;
 	}
-	return cv::Point2f();
+	return cv::RotatedRect();
 }

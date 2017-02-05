@@ -72,8 +72,8 @@ int Distance::singlePupilHorizontal(float x, float cm20, float cm50, float cm80)
 	return 100;
 }
 
-int Distance::estimate(PointPair pupil, PointPair corner, bool byDegrees) {
-	float pupilCornerRatio = cv::norm(pupil.first - pupil.second) / cv::norm(corner.first - corner.second);
+int Distance::estimate(EllipsePair pupil, PointPair corner, bool byDegrees) {
+	float pupilCornerRatio = cv::norm(pupil.first.center - pupil.second.center) / cv::norm(corner.first - corner.second);
 	float halfPupilDistanceInMM = (pupilCornerRatio * 35) / 2.0f; // Hard coded 3.5cm eye corner distance
 	
 	FocalLevel bestMatching;
