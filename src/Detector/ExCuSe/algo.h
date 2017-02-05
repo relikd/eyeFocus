@@ -43,10 +43,10 @@ cv::RotatedRect -> found ellipse. If only coarse positioning was succsessfull el
 
 */
 
-static cv::RotatedRect run(cv::Mat *pic, cv::Mat *pic_th, cv::Mat *th_edges, bool matlab){
+static cv::RotatedRect run(cv::Mat pic, cv::Mat *pic_th, cv::Mat *th_edges, bool matlab){
 
 	cv::Mat internalPic;
-	cv::normalize(*pic, internalPic, 0, 255, cv::NORM_MINMAX, CV_8U);
+	cv::normalize(pic, internalPic, 0, 255, cv::NORM_MINMAX, CV_8U);
 
 
 
@@ -93,7 +93,7 @@ static cv::RotatedRect run(cv::Mat *pic, cv::Mat *pic_th, cv::Mat *th_edges, boo
 
 	for(int i=0; i<picpic.cols; i++)
 		for(int j=0; j<picpic.rows; j++){
-			picpic.data[(picpic.cols*j)+i] = internalPic.data[(internalPic.cols*(start_y+j)) + (start_x+i)];
+			picpic.at<uchar>(j, i) = internalPic.at<uchar>(start_y+j, start_x+i);
 		}
 	
 	
@@ -111,12 +111,12 @@ static cv::RotatedRect run(cv::Mat *pic, cv::Mat *pic_th, cv::Mat *th_edges, boo
 	cv::Mat detected_edges = cv::Mat::zeros(internalPic.rows, internalPic.cols, CV_8U);
 	for(int i=0; i<detected_edges2.cols; i++)
 		for(int j=0; j<detected_edges2.rows; j++){
-			detected_edges.data[(detected_edges.cols*(start_y+j))+(start_x+i)]=detected_edges2.data[(detected_edges2.cols*j)+i];
+			detected_edges.at<uchar>(start_y+j, start_x+i) = detected_edges2.at<uchar>(j,i);
 		}
 
 
 
-	remove_points_with_low_angle(&detected_edges, start_x, end_x, start_y, end_y);
+	remove_points_with_low_angle(detected_edges, start_x, end_x, start_y, end_y);
 
 	
 
@@ -169,7 +169,8 @@ static cv::RotatedRect run(cv::Mat *pic, cv::Mat *pic_th, cv::Mat *th_edges, boo
 		ellipse.size.width=0.0;
 		zero_around_region_th_border(&internalPic, &detected_edges, th_edges, threshold_up, edge_to_th, mean_dist, area_edges, &ellipse);
 	}
-//	cv::ellipse(internalPic, ellipse, 1243);
+	
+	//	cv::ellipse(internalPic, ellipse, 1243);
 //	cv::circle(internalPic, ellipse.center, 3, 1242);
 //	imshow("one", detected_edges);
 //	imshow("two", detected_edges2);

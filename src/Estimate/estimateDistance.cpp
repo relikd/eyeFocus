@@ -34,7 +34,7 @@ void Distance::readConfigFile(const char* path) {
 		fclose(file);
 	} else {
 		fputs("Error loading pre calculated angles file.\n", stderr);
-		exit(EXIT_FAILURE);
+//		exit(EXIT_FAILURE);
 	}
 }
 

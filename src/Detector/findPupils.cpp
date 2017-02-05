@@ -79,7 +79,7 @@ cv::RotatedRect Pupils::findPupil( cv::Mat faceImage, cv::Rect2i eyeRegion, bool
 		cv::Mat sub = faceImage(eyeRegion);
 		cv::Mat pic_th = cv::Mat::zeros(sub.rows, sub.cols, CV_8U);
 		cv::Mat th_edges = cv::Mat::zeros(sub.rows, sub.cols, CV_8U);
-		cv::RotatedRect pupil = run(&sub, &pic_th, &th_edges, true);
+		cv::RotatedRect pupil = run(sub, &pic_th, &th_edges, true);
 #else
 		// Gradient based eye tracking (Timm)
 		cv::RotatedRect pupil;
