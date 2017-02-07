@@ -59,8 +59,9 @@ bool grabDownscaledGreyFrame(cv::VideoCapture capture, cv::Mat *frame) {
 		return false;
 	}
 	
-#if !kFullsizeSingleEyeMode // SpeedLink webcam has a low resolution 
-	cv::resize(img, img, cv::Size(img.cols/2, img.rows/2));
+#if !kFullsizeSingleEyeMode // SpeedLink webcam has a low resolution
+	if (sourceIsImageFile)
+		cv::resize(img, img, cv::Size(img.cols/2, img.rows/2));
 #endif
 	cv::flip(img, img, 1); // mirror it
 	
@@ -141,16 +142,17 @@ int main( int argc, const char** argv )
 			
 			
 #if kFullsizeSingleEyeMode
-			cv::Point2f point = pupils.findSingle( faceROI );
-			circle(frame_gray, point, 3, 1234);
+			cv::RotatedRect point = pupils.findSingle( faceROI );
+//			circle(frame_gray, point.center, 3, 1234);
+			ellipse(frame_gray, point, 1234);
 			if (state == SetupSingleEyeCalibration) {
-				if (!singleEye.waitForInput(frame_gray, point)) {
+				if (!singleEye.waitForInput(frame_gray, point.center)) {
 					imshow(window_name_main, frame_gray);
 					continue;
 				}
 				state = SetupPhase::SetupComplete;
 			}
-			int est = Estimate::Distance::singlePupilHorizontal(point.x, singleEye.cm20.x, singleEye.cm50.x, singleEye.cm80.x);
+			int est = Estimate::Distance::singlePupilHorizontal(point.center.x, singleEye.cm20.x, singleEye.cm50.x, singleEye.cm80.x);
 			
 #else // find corner ratio for measurement scale
 			EllipsePair pp = pupils.find( faceROI, eyes, headOffset );

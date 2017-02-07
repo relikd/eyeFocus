@@ -46,7 +46,7 @@ const bool kEnableEyeCorner = false;
 const int kEyeCornerSearchArea = 30;
 
 // Smooth eye position over time
-const bool kUseKalmanFilter = true;
+const bool kUseKalmanFilter = false;
 const float kKalmanInitialError = 100000; // very large to jump to first found position immediately
 
 #if kFullsizeSingleEyeMode

@@ -1,6 +1,7 @@
 #include "findPupils.hpp"
 #include "../Helper/Debug.h"
 #include "ExCuSe/algo.h"
+#include "ElSe/algo.h"
 
 using namespace Detector;
 
@@ -77,9 +78,15 @@ cv::RotatedRect Pupils::findPupil( cv::Mat faceImage, cv::Rect2i eyeRegion, bool
 #if USE_EXCUSE_EYETRACKING
 		// ExCuSe eye tracking
 		cv::Mat sub = faceImage(eyeRegion);
+//		cv::resize(sub, sub, cv::Size(sub.cols/2, sub.rows/2));
 		cv::Mat pic_th = cv::Mat::zeros(sub.rows, sub.cols, CV_8U);
 		cv::Mat th_edges = cv::Mat::zeros(sub.rows, sub.cols, CV_8U);
-		cv::RotatedRect pupil = run(sub, &pic_th, &th_edges, true);
+//		cv::RotatedRect pupil = run(sub, &pic_th, &th_edges, true);
+//		pupil.center.x *= 2;
+//		pupil.center.y *= 2;
+//		pupil.size.width *= 2;
+//		pupil.size.height *= 2;
+		cv::RotatedRect pupil = ELSE::run(faceImage(eyeRegion));
 #else
 		// Gradient based eye tracking (Timm)
 		cv::RotatedRect pupil;

@@ -135,12 +135,12 @@ static void zero_around_region_th_border(cv::Mat *pic, cv::Mat *edges, cv::Mat *
 			circle(*th_edges, v, 3, 1234);
 		}
 	}
-	static bool tmpp;
-	if (tmpp)
-		imshow("test1", *th_edges);
-	else
-		imshow("test2", *th_edges);
-	tmpp = !tmpp;
+//	static bool tmpp;
+//	if (tmpp)
+//		imshow("test1", *th_edges);
+//	else
+//		imshow("test2", *th_edges);
+//	tmpp = !tmpp;
 	
 	if (all_curves.size()>0) {
 		

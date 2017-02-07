@@ -28,8 +28,10 @@ void Distance::readConfigFile(const char* path) {
 		FocalLevel degree;
 		FocalLevel ratio;
 		while (readLine(file, &degree, &ratio)) {
-			listDegrees.push_back(degree);
-			listRatios.push_back(ratio);
+			if (degree.distance <= 50) {
+				listDegrees.push_back(degree);
+				listRatios.push_back(ratio);
+			}
 		}
 		fclose(file);
 	} else {
@@ -94,7 +96,9 @@ int Distance::estimate(EllipsePair pupil, PointPair corner, bool byDegrees) {
 		if (bestError > curError) {
 			bestError = curError;
 			bestMatching = fl;
+			printf("set: ");
 		}
+		printf("%d %1.3f\n", fl.distance, curError);
 	}
 	return bestMatching.distance;
 }

@@ -115,7 +115,13 @@ static cv::RotatedRect run(cv::Mat pic, cv::Mat *pic_th, cv::Mat *th_edges, bool
 		}
 
 
-
+	static bool tmpp;
+	if (tmpp)
+		imshow("test1", detected_edges);
+	else
+		imshow("test2", detected_edges);
+	tmpp = !tmpp;
+	
 	remove_points_with_low_angle(detected_edges, start_x, end_x, start_y, end_y);
 
 	
