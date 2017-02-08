@@ -1,4 +1,13 @@
+//
+//  setupEyeCoordinateSpace.cpp
+//  eyeFocus
+//
+//  Created by Oleg Geier on 08/01/17.
+//
+//
+
 #include "setupEyeCoordinateSpace.h"
+#include <opencv2/highgui/highgui.hpp>
 
 #define PREV_WIDTH 100
 #define PREV_HEIGHT 100

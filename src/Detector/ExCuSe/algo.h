@@ -27,7 +27,7 @@
 
 */
 
-
+namespace EXCUSE {
 /*
 Start function of the algorithm
 
@@ -186,11 +186,4 @@ static cv::RotatedRect run(cv::Mat pic, cv::Mat *pic_th, cv::Mat *th_edges, bool
 	return ellipse;
 	
 }
-
-
-
-
-
-
-
-
+}

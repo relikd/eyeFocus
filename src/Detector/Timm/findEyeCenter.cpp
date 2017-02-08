@@ -1,11 +1,7 @@
 #include "findEyeCenter.h"
-
 #include <opencv2/highgui/highgui.hpp>
 #include <queue>
-
-#include "../constants.h"
-#include "../Helper/helper.h"
-
+#include "../../constants.h"
 
 using namespace Detector;
 
@@ -102,6 +98,13 @@ cv::Point2f fastEllipseContourFitting(cv::Mat image) {
 //	imshow("Contours", image);
 	
 	return ellipse.center;
+}
+
+cv::Point2f EyeCenter::findEyeCenter(cv::Mat eyebox) {
+	static bool tmp;
+	cv::String windowName = (tmp ? "Debug Left" : "Debug Right");
+	tmp = !tmp;
+	return findEyeCenter(eyebox, cv::Rect(0, 0, eyebox.cols, eyebox.rows), windowName);
 }
 
 cv::Point2f EyeCenter::findEyeCenter(cv::Mat face, cv::Rect eye, std::string debugWindow) {

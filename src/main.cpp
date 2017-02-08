@@ -2,193 +2,169 @@
 #include "constants.h"
 #include "Setup/setupEyeCoordinateSpace.h"
 #include "Setup/setupHeadmount.h"
-#include "Setup/setupSingleEye.hpp"
+#include "Setup/setupSingleEye.h"
 #include "Detector/findFace.h"
-#include "Detector/findPupils.hpp"
-#include "Estimate/estimateDistance.hpp"
+#include "Detector/findEyeCorner.h"
+#include "Estimate/estimateDistance.h"
+#include "Helper/FrameReader.h"
+#include "Helper/LogWriter.h"
 
-/** Global variables */
-static bool sourceIsImageFile;
 
 #if !kCameraIsHeadmounted
-//-- Note, either copy these two files from opencv/data/haarscascades to your current folder, or change these locations
-static Detector::Face detectFace = Detector::Face("res/haarcascade_frontalface_alt.xml");
+//-- Note, either copy these two files from opencv/d1ata/haarscascades to your current folder, or change these locations
+static Detector::Face faceDetector = Detector::Face("res/haarcascade_frontalface_alt.xml");
 #endif
 
+void initHeadmount(FrameReader fr, cv::Rect2i eyeBox[2], cv::Rect2i eyeCorner[2]);
+void startSingleEyeTracking(FrameReader fr);
+void drawDistance(cv::Mat frame, int distance);
+void drawDebugPlot(cv::Mat frame, cv::Rect2i box, cv::RotatedRect pupil);
 
-enum SetupPhase {
-	SetupHeadmount,
-	SetupSingleEyeCalibration,
-	SetupEyeCoordinateSpace,
-	SetupComplete
-};
-
-cv::VideoCapture initProgram(const char* path) {
-	cv::namedWindow(window_name_main,CV_WINDOW_NORMAL);
-	cv::moveWindow(window_name_main, 400, 100);
-#if DEBUG_PLOT_ENABLED
-	cv::namedWindow(window_name_face,CV_WINDOW_AUTOSIZE);
-	cv::moveWindow(window_name_face, 100, 100);
-#endif
-	cv::namedWindow(window_name_right_eye,CV_WINDOW_NORMAL);
-	cv::moveWindow(window_name_right_eye, 10, 600);
-	cv::namedWindow(window_name_left_eye,CV_WINDOW_NORMAL);
-	cv::moveWindow(window_name_left_eye, 10, 800);
-	
-	sourceIsImageFile = (strlen(path) > 2); // string is not an index number
-	
-	// create Video Capture from calling argument
-	if (sourceIsImageFile) {
-		return cv::VideoCapture( path );
-	} else {
-		long index = 0;
-		strtol(path, NULL, 10);
-		return cv::VideoCapture( index );
-	}
-}
-
-bool grabDownscaledGreyFrame(cv::VideoCapture capture, cv::Mat *frame) {
-	cv::Mat img;
-	capture.read(img);
-	
-	if( img.empty() ) {
-		if (sourceIsImageFile)
-			exit(EXIT_SUCCESS); // exit on EOF
-		fputs(" --(!) No captured frame -- Break!\n", stderr);
-		*frame = cv::Mat::zeros(640, 480, CV_8UC1);
-		return false;
-	}
-	
-#if !kFullsizeSingleEyeMode // SpeedLink webcam has a low resolution
-	if (sourceIsImageFile)
-		cv::resize(img, img, cv::Size(img.cols/2, img.rows/2));
-#endif
-	cv::flip(img, img, 1); // mirror it
-	
-	// get gray image from blue channel
-	std::vector<cv::Mat> rgbChannels(3);
-	cv::split(img, rgbChannels);
-	*frame = rgbChannels[2];
-	return true;
-}
-
-int main( int argc, const char** argv )
-{
+int main( int argc, const char** argv ) {
 	if (argc != 2) {
 		fputs("Missing argument value. Pass either [path to video file] or [camera index].\n\n", stderr);
 		return EXIT_SUCCESS;
 	}
 	
-	cv::VideoCapture capture = initProgram( argv[1] );
-	if( !capture.isOpened() )
-		return EXIT_FAILURE;
-	
-	SetupPhase state = SetupPhase::SetupComplete;
-	
-#if kSetupEyeCoordinateSpace
-	Setup::EyeCoordinateSpace setupECS = Setup::EyeCoordinateSpace();
-	state = SetupPhase::SetupEyeCoordinateSpace;
-#endif
-	
-#if kCameraIsHeadmounted
-	char headPosFile[1024];
-	strcpy(headPosFile, argv[1]);
-	strcat(headPosFile, ".eyepos.txt");
-	Setup::Headmount setupHead = Setup::Headmount(window_name_main, headPosFile);
-	state = SetupPhase::SetupHeadmount;
-#endif
+	// create Video Capture from calling argument
+	FrameReader fr = FrameReader::initWithArgv(argv[1]);
+	fr.downScaling = 2; // reduce size for GoPro
 	
 #if kFullsizeSingleEyeMode
-	Setup::SingleEye singleEye = Setup::SingleEye(window_name_main);
-	state = SetupPhase::SetupSingleEyeCalibration;
+	startSingleEyeTracking(fr); // will never return
 #endif
 	
-	RectPair eyes;
-	RectPair eyeCorners;
-	cv::Mat faceROI;
-	cv::Point2f headOffset;
+	cv::Rect2i eyeBox[2];
+	cv::Rect2i eyeCorner[2];
+
+#if kCameraIsHeadmounted // Manually select eye region
+	initHeadmount(fr, eyeBox, eyeCorner);
+#endif
+	
 	
 	char pupilPosLogFile[1024];
-	strcpy(pupilPosLogFile, argv[1]);
-	strcat(pupilPosLogFile, ".pupilpos.csv");
-	Detector::Pupils pupils = Detector::Pupils(pupilPosLogFile);
+	snprintf(pupilPosLogFile, 1024*sizeof(char), "%s.pupilpos.csv", fr.filePath);
+	LogWriter log( pupilPosLogFile, "pLx,pLy,pRx,pRy,PupilDistance,cLx,cLy,cRx,cRy,CornerDistance\n" );
 	
-	Estimate::Distance distEst = Estimate::Distance(!kFullsizeSingleEyeMode);
+	FindKalmanPupil pupilDetector[2];
+	Detector::EyeCorner cornerDetector;
+	Estimate::Distance distEst("estimate.cfg");
 	
-	while ( true )
-	{
-		cv::Mat frame_gray;
-		if ( grabDownscaledGreyFrame(capture, &frame_gray) ) {
-			
-			// -- Get eye region
-#if kCameraIsHeadmounted
-			if (state == SetupHeadmount) {
-				if (setupHead.waitForInput(frame_gray, &eyes, &eyeCorners)) {
-					state = SetupPhase::SetupComplete;
-				} else {
-					imshow(window_name_main, frame_gray);
-					continue; // eyes still not selected
-				}
-			}
-			// whole image is 'face' area for eye detection
-			faceROI = frame_gray;
-#else
-			// Apply the classifier to the frame
-			cv::Rect face_r = detectFace.findFace(frame_gray);
-			headOffset = face_r.tl();
-			faceROI = frame_gray(face_r);
-			eyes = detectFace.findEyes(faceROI);
+	cv::namedWindow(fr.filePath, CV_WINDOW_NORMAL);
+	cv::moveWindow(fr.filePath, 400, 100);
+	
+	while ( fr.readNext() ) {
+		cv::Mat img = fr.frame;
+		
+#if !kCameraIsHeadmounted
+		cv::Rect2i face_r = faceDetector.find(fr.frame, &eyeBox[0], &eyeBox[1]);
+		rectangle(img, face_r, 200);
 #endif
-			
-			
-#if kFullsizeSingleEyeMode
-			cv::RotatedRect point = pupils.findSingle( faceROI );
-//			circle(frame_gray, point.center, 3, 1234);
-			ellipse(frame_gray, point, 1234);
-			if (state == SetupSingleEyeCalibration) {
-				if (!singleEye.waitForInput(frame_gray, point.center)) {
-					imshow(window_name_main, frame_gray);
-					continue;
-				}
-				state = SetupPhase::SetupComplete;
-			}
-			int est = Estimate::Distance::singlePupilHorizontal(point.center.x, singleEye.cm20.x, singleEye.cm50.x, singleEye.cm80.x);
-			
-#else // find corner ratio for measurement scale
-			EllipsePair pp = pupils.find( faceROI, eyes, headOffset );
-			PointPair corner = pupils.findCorners( faceROI, eyeCorners, headOffset );
-			// draw pupil center on main image
-			ellipse(frame_gray, pp.first, 1234);
-			ellipse(frame_gray, pp.second, 1234);
-//			circle(frame_gray, pp.first.center, 3, 1234);
-//			circle(frame_gray, pp.second.center, 3, 1234);
-			drawMarker(frame_gray, corner.first, 200);
-			drawMarker(frame_gray, corner.second, 200);
-			// Estimate distance
-			int est = distEst.estimate(pp, corner, false);
-#endif
-			// Print distance 
-			char strEst[6];
-			snprintf(strEst, 6*sizeof(char), "%dcm", est);
-			cv::putText(frame_gray, strEst, cv::Point(frame_gray.cols - 220, 90), cv::FONT_HERSHEY_PLAIN, 5.0f, cv::Scalar(255,255,255));
-			
-			
-			if (state == SetupComplete) {
-				if( cv::waitKey(10) == 27 ) // esc key
-					return EXIT_SUCCESS;
-			}
-#if kSetupEyeCoordinateSpace
-			else if (state == SetupEyeCoordinateSpace) {
-				if (setupECS.waitForInput(frame_gray, eyes, pp, headOffset)) {
-					state = SetupPhase::SetupComplete;
-				}
-			}
-#endif
-			
-			imshow(window_name_main, frame_gray);
+		
+		if (kSmoothFaceImage) {
+			double sigma = kSmoothFaceFactor * img.cols;
+			GaussianBlur( img, img, cv::Size( 0, 0 ), sigma);
 		}
+		
+		cv::RotatedRect pupil[2];
+		cv::Point2f corner[2];
+		for (int i = 0; i < 2; i++) {
+			pupil[i] = pupilDetector[i].findSmoothed(img(eyeBox[i]), ElSe::find, eyeBox[i].tl());
+			corner[i] = cornerDetector.findByAvgColor(img(eyeCorner[i]), true, eyeCorner[i].tl());
+			drawMarker(img, corner[i], 200);
+			drawDebugPlot(img, eyeBox[i], pupil[i]);
+		}
+		log.writePointPair(pupil[0].center, pupil[1].center, false);
+		log.writePointPair(corner[0], corner[1], true);
+		
+		// Estimate distance
+		int est = distEst.estimate(pupil[0], pupil[1], corner[0], corner[1], false);
+		drawDistance(fr.frame, est);
+		
+		imshow(fr.filePath, img);
+		if( cv::waitKey(10) == 27 ) // esc key
+			return EXIT_SUCCESS;
 	}
-	
 	return EXIT_SUCCESS;
 }
 
+//  ---------------------------------------------------------------
+// |
+// |  Different Tracker-Type Related Functions
+// |
+//  ---------------------------------------------------------------
+
+void initHeadmount(FrameReader fr, cv::Rect2i eyeBox[2], cv::Rect2i eyeCorner[2]) {
+	char savePath[1024] = "cam.eyepos.txt";
+	if (fr.isVideoFile)
+		snprintf(savePath, 1024*sizeof(char), "%s.eyepos.txt", fr.filePath);
+	Setup::Headmount setupHead(fr, savePath);
+	eyeBox[0] = setupHead.leftEyeBox;
+	eyeBox[1] = setupHead.rightEyeBox;
+	eyeCorner[0] = setupHead.leftEyeCorner;
+	eyeCorner[1] = setupHead.rightEyeCorner;
+}
+
+/** Single pupil is filling the complete cam image */
+void startSingleEyeTracking(FrameReader fr) {
+	FindKalmanPupil tracker;
+	// Single Eye Calibration
+	Setup::SingleEye singleEye = Setup::SingleEye(fr, &tracker);
+	// use full video size for eye tracking, adjust to eg. remove edge
+	cv::Rect2i clip = cv::Rect2i(0, 0, fr.frame.cols, fr.frame.rows);
+	
+	while ( fr.readNext() ) {
+		cv::RotatedRect point = tracker.findSmoothed(fr.frame(clip), ElSe::find, clip.tl());
+		circle(fr.frame, point.center, 3, 1234);
+		ellipse(fr.frame, point, 1234);
+		int est = Estimate::Distance::singlePupilHorizontal(point.center.x, singleEye.cm20.x, singleEye.cm50.x, singleEye.cm80.x);
+		
+		drawDistance(fr.frame, est);
+		imshow(fr.filePath, fr.frame);
+		
+		if( cv::waitKey(10) == 27 ) // esc key
+			exit(EXIT_SUCCESS);
+	}
+}
+
+//  ---------------------------------------------------------------
+// |
+// |  Drawing on frame
+// |
+//  ---------------------------------------------------------------
+
+void drawDistance(cv::Mat frame, int distance) {
+	char strEst[6];
+	snprintf(strEst, 6*sizeof(char), "%dcm", distance);
+	cv::putText(frame, strEst, cv::Point(frame.cols - 220, frame.rows - 10), cv::FONT_HERSHEY_PLAIN, 5.0f, cv::Scalar(255,255,255));
+}
+
+void drawDebugPlot(cv::Mat frame, cv::Rect2i box, cv::RotatedRect pupil) {
+#if 0
+	// get tiled eye region
+	//  .-----------.
+	//  |___________|
+	//  |      |    |
+	//  | L    *  R |  // * = pupil
+	//  |______|____|
+	//  |           |
+	//  '-----------'
+	cv::Rect2f leftRegion(box.x, box.y, pupil.center.x - box.x, box.height / 2);
+	leftRegion.y += leftRegion.height / 2;
+	
+	cv::Rect2f rightRegion(leftRegion);
+	rightRegion.x += leftRegion.width;
+	rightRegion.width = box.width - leftRegion.width;
+	
+	// draw eye region
+	rectangle(frame, box, 1234);
+	
+	// draw tiled eye box
+	rectangle(frame, leftRegion, 200);
+	rectangle(frame, rightRegion, 200);
+#endif
+	
+	// draw eye center
+	ellipse(frame, pupil, 1234);
+	circle(frame, pupil.center, 3, 1234);
+}

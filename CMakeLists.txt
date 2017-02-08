@@ -3,21 +3,26 @@ cmake_minimum_required(VERSION 3.1)
 
 SET( EXECUTABLE_OUTPUT_PATH "../bin" CACHE PATH "Output directory" )
 
-# Grouping
+# Grouping - level 0
 file( GLOB_RECURSE SRC_ROOT src/* *.(cpp|h|hpp) )
 file( GLOB SRC_DETECTOR src/Detector/* *.(cpp|h|hpp) )
-file( GLOB SRC_EXCUSE src/Detector/ExCuSe/* )
-file( GLOB SRC_ELSE src/Detector/ElSe/* )
 file( GLOB SRC_ESTIMATE src/Estimate/* )
 file( GLOB SRC_HELPER src/Helper/* )
 file( GLOB SRC_SETUP src/Setup/* )
 source_group("" FILES ${SRC_ROOT})
 source_group("Detector" FILES ${SRC_DETECTOR})
-source_group("Detector\\ExCuSe" FILES ${SRC_EXCUSE})
-source_group("Detector\\ElSe" FILES ${SRC_ELSE})
 source_group("Estimate" FILES ${SRC_ESTIMATE})
 source_group("Helper" FILES ${SRC_HELPER})
 source_group("Setup" FILES ${SRC_SETUP})
+
+# Grouping - level Detector
+file( GLOB SRC_ELSE src/Detector/ElSe/* )
+file( GLOB SRC_EXCUSE src/Detector/ExCuSe/* )
+file( GLOB SRC_TIMM src/Detector/Timm/* )
+source_group("Detector\\ElSe" FILES ${SRC_ELSE})
+source_group("Detector\\ExCuSe" FILES ${SRC_EXCUSE})
+source_group("Detector\\Timm" FILES ${SRC_TIMM})
+
 
 if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "MSVC")
 	add_definitions( -D _USE_MATH_DEFINES ) # define M_PI etc for <cmath>

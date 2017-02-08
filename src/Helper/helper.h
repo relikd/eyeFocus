@@ -1,3 +1,11 @@
+//
+//  helper.h
+//  eyeFocus
+//
+//  Created by Oleg Geier on 19/01/17.
+//
+//
+
 #ifndef helper_h
 #define helper_h
 

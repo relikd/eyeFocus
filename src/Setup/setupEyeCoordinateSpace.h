@@ -1,9 +1,18 @@
+//
+//  setupEyeCoordinateSpace.h
+//  eyeFocus
+//
+//  Created by Oleg Geier on 08/01/17.
+//
+//
+
 #ifndef setupEyeCoordinateSpace_h
 #define setupEyeCoordinateSpace_h
 
-#include "../constants.h"
 #include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/highgui/highgui.hpp>
+
+typedef std::pair<cv::Point2f, cv::Point2f> PointPair;
+typedef std::pair<cv::Rect2i, cv::Rect2i> RectPair;
 
 struct EyeSpaceData {
 	cv::Rect2f leftEyeRegion, rightEyeRegion;

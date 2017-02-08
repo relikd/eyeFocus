@@ -1,4 +1,12 @@
-#include "estimateDistance.hpp"
+//
+//  estimateDistance.cpp
+//  eyeFocus
+//
+//  Created by Oleg Geier on 03/02/17.
+//
+//
+
+#include "estimateDistance.h"
 #include <cmath>
 
 using namespace Estimate;
@@ -13,7 +21,7 @@ bool readLine(FILE* f, FocalLevel *degrees, FocalLevel *ratio) {
 	return false;
 }
 
-void Distance::readConfigFile(const char* path) {
+Distance::Distance(const char* path) {
 	if (path == NULL)
 		return;
 	
@@ -40,6 +48,37 @@ void Distance::readConfigFile(const char* path) {
 	}
 }
 
+int Distance::estimate(cv::RotatedRect leftPupil, cv::RotatedRect rightPupil, cv::Point2f leftCorner, cv::Point2f rightCorner, bool byDegrees)
+{
+	float pupilCornerRatio = cv::norm(leftPupil.center - rightPupil.center) / cv::norm(leftCorner - rightCorner);
+	float halfPupilDistanceInMM = (pupilCornerRatio * 35) / 2.0f; // Hard coded 3.5cm eye corner distance
+	
+	FocalLevel bestMatching;
+	float bestError = 999;
+	
+	for (FocalLevel &fl : (byDegrees ? listDegrees : listRatios) ) {
+		float angle;
+		if (byDegrees)
+			angle = 2 * atanf( halfPupilDistanceInMM / (fl.distance * 10) ) * 180 / M_PI;
+		else
+			angle = pupilCornerRatio;
+		
+		float range = fl.max - fl.min;
+		float curError = std::fabs(angle - fl.avg);
+		if (byDegrees) curError /= range;
+		else           curError *= range;
+		
+		if (bestError > curError) {
+			bestError = curError;
+			bestMatching = fl;
+			//printf("set: ");
+		}
+		//printf("%d %1.3f\n", fl.distance, curError);
+	}
+	return bestMatching.distance;
+}
+
+// static
 int Distance::singlePupilHorizontal(float x, float cm20, float cm50, float cm80) {
 	double lowerRange = std::pow(cm50 / cm20, 1/30.0);
 	double upperRange = std::pow(cm80 / cm50, 1/30.0);
@@ -72,33 +111,4 @@ int Distance::singlePupilHorizontal(float x, float cm20, float cm50, float cm80)
 	} while (++bestMatchUpper < 30);
 	
 	return 100;
-}
-
-int Distance::estimate(EllipsePair pupil, PointPair corner, bool byDegrees) {
-	float pupilCornerRatio = cv::norm(pupil.first.center - pupil.second.center) / cv::norm(corner.first - corner.second);
-	float halfPupilDistanceInMM = (pupilCornerRatio * 35) / 2.0f; // Hard coded 3.5cm eye corner distance
-	
-	FocalLevel bestMatching;
-	float bestError = 999;
-	
-	for (FocalLevel &fl : (byDegrees ? listDegrees : listRatios) ) {
-		float angle;
-		if (byDegrees)
-			angle = 2 * atanf( halfPupilDistanceInMM / (fl.distance * 10) ) * 180 / M_PI;
-		else
-			angle = pupilCornerRatio;
-		
-		float range = fl.max - fl.min;
-		float curError = std::fabs(angle - fl.avg);
-		if (byDegrees) curError /= range;
-		else           curError *= range;
-		
-		if (bestError > curError) {
-			bestError = curError;
-			bestMatching = fl;
-			printf("set: ");
-		}
-		printf("%d %1.3f\n", fl.distance, curError);
-	}
-	return bestMatching.distance;
 }

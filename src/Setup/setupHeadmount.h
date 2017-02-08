@@ -1,25 +1,23 @@
+//
+//  setupHeadmount.h
+//  eyeFocus
+//
+//  Created by Oleg Geier on 26/12/16.
+//
+//
+
 #ifndef SETUP_HEADMOUNT_H
 #define SETUP_HEADMOUNT_H
 
-#include "../constants.h"
-#include <opencv2/imgproc/imgproc.hpp>
+#include "../Helper/FrameReader.h"
 
 namespace Setup {
 	class Headmount {
-		std::vector<cv::Point> userPoints;
-		const cv::String windowName;
-		const char* savePath = NULL;
-		bool superFastInit = false;
-		
-		
 	public:
-		Headmount(const cv::String window, const char* file = NULL);
+		cv::Rect2i leftEyeBox, rightEyeBox;
+		cv::Rect2i leftEyeCorner, rightEyeCorner;
 		
-		bool waitForInput(cv::Mat frame, RectPair *eyeRegion, RectPair *eyeCornerRegion);
-		
-	private:
-		static void mouseHandler(int event, int x, int y, int flags, void* param);
-		void drawInstructionsAndUserSelection(cv::Mat frame);
+		Headmount(FrameReader fr, const char* savePath = NULL);
 	};
 }
 

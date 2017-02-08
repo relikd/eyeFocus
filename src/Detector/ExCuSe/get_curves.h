@@ -16,7 +16,7 @@
  
  */
 
-uchar mean_inner_grey_from_point(cv::Point curve_pt, cv::Point mean_p, cv::Mat *pic) {
+static uchar mean_inner_grey_from_point(cv::Point curve_pt, cv::Point mean_p, cv::Mat *pic) {
 	int x = curve_pt.x;
 	int y = curve_pt.y;
 	double x_mean_p = x - (double)mean_p.x;

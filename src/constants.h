@@ -5,18 +5,11 @@
 
 // Ask user to select eye reagion upfront. Otherwise find eyes with face detection
 #define kCameraIsHeadmounted 1
-#define kSetupEyeCoordinateSpace 0
-#define kFullsizeSingleEyeMode 0 // kCameraIsHeadmounted must be 1
+#define kFullsizeSingleEyeMode 0
 
-typedef std::pair<cv::Point2f, cv::Point2f> PointPair;
-typedef std::pair<cv::Rect2i, cv::Rect2i> RectPair;
-typedef std::pair<cv::RotatedRect, cv::RotatedRect> EllipsePair;
-
-
-const cv::String window_name_main = "Capture - Face detection";
-const cv::String window_name_face = "Capture - Face";
-const cv::String window_name_left_eye  = "Left Eye";
-const cv::String window_name_right_eye = "Right Eye";
+//const cv::String window_name_main = "Capture - Face detection";
+const cv::String window_setup_headmount = "Select eye area and corners";
+const cv::String window_setup_single_eye = "Monokular Headmounted Setup";
 
 
 // Size constants

@@ -35,7 +35,7 @@ namespace Detector {
 		
 		
 		cv::Point2f find(cv::Mat region, bool left, bool left2);
-		cv::Point2f findByAvgColor(cv::Mat region, bool left);
+		cv::Point2f findByAvgColor(cv::Mat region, bool left, cv::Point2f offset);
 		
 	private:
 		cv::Mat eyeCornerMap(const cv::Mat &region, bool left, bool left2);

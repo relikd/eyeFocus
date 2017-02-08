@@ -1,3 +1,11 @@
+//
+//  KalmanPoint.h
+//  eyeFocus
+//
+//  Created by Oleg Geier on 30/01/17.
+//
+//
+
 #ifndef KalmanPoint_hpp
 #define KalmanPoint_hpp
 
