@@ -1,64 +1,77 @@
+//
+//  findEyeCorner.cpp
+//  eyeFocus
+//
+//  Created by Oleg Geier on 08/02/17.
+//
+//
+
 #include "findEyeCorner.h"
 
 using namespace Detector;
 
-cv::Point2f EyeCorner::findByAvgColor(cv::Mat region, bool left, cv::Point2f offset) {
-	if (region.cols == 0 && region.rows == 0)
+cv::Point2f EyeCorner::findByAvgColor(const cv::Mat &region, cv::Point2i offset) {
+	if (region.cols == 0 || region.rows == 0)
 		return cv::Point2f(0,0);
 	
-	double avgValue = cv::sum(region)[0] / (region.cols * region.rows);
+	float avgValue = cv::mean(region)[0];
+	cv::Rect2i subSize = cv::Rect2i(region.cols/4, region.rows/4, region.cols/2, region.rows/2);
+	
 	cv::Mat tmp;
-	//cv::Canny(tmp, tmp, 0.1, 0.1);
-	cv::GaussianBlur(region, tmp, cv::Size(9,9), 0, 0);
+	cv::GaussianBlur(region(subSize), tmp, cv::Size(9,9), 0, 0);
 	cv::threshold(tmp, tmp, avgValue * 0.95, 255, cv::THRESH_BINARY);
-	cv::GaussianBlur(tmp, tmp, cv::Size(9,9), 0, 0);
+	cv::GaussianBlur(tmp, tmp, cv::Size(9,9), 0, 0); // blur a second time to get a smoother edge
+	//cv::Canny(tmp, tmp, 0.1, 0.1);
 	
-	return (left ? kflc : kfrc).smoothedPosition( find(tmp, left, left) ) + offset;
+	cv::Point2f corner = find(tmp);
+	corner.x += subSize.x + offset.x;
+	corner.y += subSize.y + offset.y;
+	return KF.smoothedPosition( corner );
 }
 
-cv::Point2f EyeCorner::find(cv::Mat region, bool left, bool left2) {
-	cv::Mat cornerMap = eyeCornerMap(region, left, left2);
+cv::Point2f EyeCorner::find(const cv::Mat &region) {
+	// Apply filter kernel
+	cv::Mat filteredImage;
+	cv::filter2D(region, filteredImage, CV_32F, cornerKernel);
 	
-	cv::Point maxP;
-	cv::minMaxLoc(cornerMap,NULL,NULL,NULL,&maxP);
+	// Find corner where value is max
+	cv::Point maxP = likeliestCorner(filteredImage);
+//	cv::minMaxLoc(filteredImage, NULL, NULL, NULL, &maxP);
 	
-	// GFTT
-//	std::vector<cv::Point2f> corners;
-//	cv::goodFeaturesToTrack(region, corners, 500, 0.005, 20);
-//	for (int i = 0; i < corners.size(); ++i) {
-//		cv::circle(region, corners[i], 2, 200);
-//	}
-//	imshow("Corners",region);
-	
-	return findSubpixel(cornerMap, maxP);
+	// Calculate subpixel position
+	std::vector<cv::Point2f> sub = { maxP }; // vector needed for cornerSubPix
+	cv::TermCriteria criteria = cv::TermCriteria( CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 20, 0.001 );
+	cv::cornerSubPix( filteredImage, sub, cv::Size(3,3), cv::Size(-1,-1), criteria );
+	return sub[0];
 }
 
-// TODO: implement these
-cv::Mat EyeCorner::eyeCornerMap(const cv::Mat &region, bool left, bool left2) {
-	cv::Mat cornerMap;
+cv::Point EyeCorner::likeliestCorner(const cv::Mat &filtered) {
+	static const int size = 4;
+	static const int size2 = size * 2 + 1;
+	cv::Mat mask = cv::Mat::ones(filtered.size(), CV_8UC1);
 	
-	cv::Size sizeRegion = region.size();
-	cv::Range colRange(sizeRegion.width / 4, sizeRegion.width * 3 / 4);
-	cv::Range rowRange(sizeRegion.height / 4, sizeRegion.height * 3 / 4);
+	cv::Point maxPos;
+	float maxBrightness = 0;
 	
-	cv::Mat miRegion(region, rowRange, colRange);
-	
-	cv::filter2D(miRegion, cornerMap, CV_32F,
-				 (left && !left2) || (!left && !left2) ? *leftCornerKernel : *rightCornerKernel);
-	
-	return cornerMap;
-}
-
-cv::Point2f EyeCorner::findSubpixel(cv::Mat region, cv::Point maxP) {
-	cv::Size sizeRegion = region.size();
-	
-	cv::Mat cornerMap(sizeRegion.height * 10, sizeRegion.width * 10, CV_32F);
-	
-	cv::resize(region, cornerMap, cornerMap.size(), 0, 0, cv::INTER_CUBIC);
-	
-	cv::Point maxP2;
-	cv::minMaxLoc(cornerMap, NULL,NULL,NULL,&maxP2);
-	
-	return cv::Point2f(sizeRegion.width / 2.0F + maxP2.x / 10.0F,
-					   sizeRegion.height / 2.0F + maxP2.y / 10.0F);
+	int i = 4; // find the 4 most likeliest corners
+	while (i--) {
+		cv::Point pos;
+		cv::minMaxLoc(filtered, NULL, NULL, NULL, &pos, mask);
+		
+		cv::Rect2i area = cv::Rect2i(pos.x-size, pos.y-size, size2, size2);
+		// subtract overlapping range
+		if (area.x + area.width  > filtered.cols)  area.width  = filtered.cols - area.x;
+		if (area.y + area.height > filtered.rows)  area.height = filtered.rows - area.y;
+		if (area.x < 0) { area.width  += area.x; area.x = 0; }
+		if (area.y < 0) { area.height += area.y; area.y = 0; }
+		
+		mask(area) = 0; // ignore this position in next iteration
+		float areaBrightness = cv::mean(filtered(area))[0];
+		
+		if (areaBrightness > maxBrightness) {
+			maxBrightness = areaBrightness;
+			maxPos = pos;
+		}
+	}
+	return maxPos;
 }

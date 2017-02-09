@@ -42,16 +42,16 @@ int main( int argc, const char** argv ) {
 #endif
 	
 	
+	cv::namedWindow(fr.filePath, CV_WINDOW_NORMAL);
+	cv::moveWindow(fr.filePath, 400, 100);
+	
 	char pupilPosLogFile[1024];
 	snprintf(pupilPosLogFile, 1024*sizeof(char), "%s.pupilpos.csv", fr.filePath);
 	LogWriter log( pupilPosLogFile, "pLx,pLy,pRx,pRy,PupilDistance,cLx,cLy,cRx,cRy,CornerDistance\n" );
 	
 	FindKalmanPupil pupilDetector[2];
-	Detector::EyeCorner cornerDetector;
+	Detector::EyeCorner cornerDetector[2]; cornerDetector[1].flipKernelToRightCorner();
 	Estimate::Distance distEst("estimate.cfg");
-	
-	cv::namedWindow(fr.filePath, CV_WINDOW_NORMAL);
-	cv::moveWindow(fr.filePath, 400, 100);
 	
 	while ( fr.readNext() ) {
 		cv::Mat img = fr.frame;
@@ -70,7 +70,7 @@ int main( int argc, const char** argv ) {
 		cv::Point2f corner[2];
 		for (int i = 0; i < 2; i++) {
 			pupil[i] = pupilDetector[i].findSmoothed(img(eyeBox[i]), ElSe::find, eyeBox[i].tl());
-			corner[i] = cornerDetector.findByAvgColor(img(eyeCorner[i]), true, eyeCorner[i].tl());
+			corner[i] = cornerDetector[i].findByAvgColor(img(eyeCorner[i]), eyeCorner[i].tl());
 			drawMarker(img, corner[i], 200);
 			drawDebugPlot(img, eyeBox[i], pupil[i]);
 		}

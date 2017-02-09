@@ -13,33 +13,25 @@ namespace Detector {
 			{-1,-1,-1,-1, 0, 3},
 			{ 1, 1, 1, 1, 1, 1},
 		};
-		
-		cv::Mat *leftCornerKernel;
-		cv::Mat *rightCornerKernel;
-		
-		KalmanPoint kflc = KalmanPoint(1e-5, 30, 1000); // left corner
-		KalmanPoint kfrc = KalmanPoint(1e-5, 30, 1000); // right corner
+		cv::Mat cornerKernel;
+		KalmanPoint KF = KalmanPoint(1e-5, 30, 1000);
 		
 	public:
-		EyeCorner() {
-			rightCornerKernel = new cv::Mat(4, 6, CV_32F, kEyeCornerKernel);
-			leftCornerKernel = new cv::Mat(4, 6, CV_32F);
-			// flip horizontally
-			cv::flip(*rightCornerKernel, *leftCornerKernel, 1);
+		EyeCorner(bool isRightEye = false) : cornerKernel(cv::Mat(4, 6, CV_32F, kEyeCornerKernel)) {
+			if (isRightEye) flipKernelToRightCorner();
 		};
 		
-		~EyeCorner() {
-			delete leftCornerKernel;
-			delete rightCornerKernel;
-		};
+		void flipKernelToRightCorner() {
+			cv::flip(cornerKernel, cornerKernel, 1); // flip horizontally
+		}
 		
-		
-		cv::Point2f find(cv::Mat region, bool left, bool left2);
-		cv::Point2f findByAvgColor(cv::Mat region, bool left, cv::Point2f offset);
+		cv::Point2f findByAvgColor(const cv::Mat &region, cv::Point2i offset);
 		
 	private:
-		cv::Mat eyeCornerMap(const cv::Mat &region, bool left, bool left2);
-		cv::Point2f findSubpixel(cv::Mat region, cv::Point maxP);
+		/** @return Corner position with subpixel accuracy. */
+		cv::Point2f find(const cv::Mat &region);
+		/** Try multiple 'highest value' corners. */
+		cv::Point likeliestCorner(const cv::Mat &filtered);
 	};
 }
 
