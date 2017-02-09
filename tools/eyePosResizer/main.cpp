@@ -17,12 +17,12 @@ FILE* openFile(const char* path, const char* name, bool write = false) {
 	return file;
 }
 
-void loopOverAllLogFiles(const char *path, std::function<std::string(int distance, const char* extension, FILE* file)>func) {
+void loopOverAllLogFiles(const char *path, const char *fExt, std::function<std::string(int distance, const char* extension, FILE* file)>func) {
 	for (int i = 0; i < 225; i++) {
 		int distance = (i%200)+1;
 		const char* ext = (i<200 ? "cm" : "m"); // 1-200cm & 1-25m
 		char name[50];
-		snprintf(name, 50*sizeof(char), "%d%s.MP4.eyepos.txt", distance, ext);
+		snprintf(name, 50*sizeof(char), "%d%s.%s.pupilpos.csv", distance, ext, fExt);
 		
 		FILE* file = openFile(path, name);
 		// non existent files will be skipped automatically
@@ -45,14 +45,18 @@ void loopOverAllLogFiles(const char *path, std::function<std::string(int distanc
 //  ---------------------------------------------------------------
 
 int main( int argc, const char** argv ) {
-	if (argc != 2) {
+	if (argc != 2 && argc != 3) {
 		fputs("Missing argument value. Path to folder containing eyeFocus log files expected.\n\n", stderr);
 		return EXIT_SUCCESS;
+	} else if (argc == 3 && strlen(argv[1]) > 4) {
+		fputs("Usage: logEvaluator {mov|mp4|avi} ../series7/ \n\n", stderr);
+		return EXIT_FAILURE;
 	}
+	const char* videoExt = (argc == 2 ? "MP4" : argv[1]); // default to MP4
 	const char* folder = argv[1];
-	printf("Processing folder '%s':\n", folder);
+//	printf("Processing folder '%s':\n", folder);
 	
-	loopOverAllLogFiles(folder, [](int fDist, const char* fExt, FILE* file)
+	loopOverAllLogFiles(folder, videoExt, [](int fDist, const char* fExt, FILE* file)
 	{
 //		Eye Area:
 //		[167 192] [241 196] - [788 168] [713 174]

@@ -8,6 +8,8 @@
 #define NumOfCols 10+1
 
 const size_t skipFirstXValues = 50;
+const char* file_error = "meanError.csv";
+const char* file_report = "report.txt";
 
 //  ---------------------------------------------------------------
 // |
@@ -99,7 +101,7 @@ void readCsvHeader(FILE* file, char** headerInfo) {
 	}
 }
 
-char** loopOverAllLogFiles(const char *path, std::function<void(int distance, const char* extension, FILE* file, char** header)>func) {
+char** loopOverAllLogFiles(const char *path, const char *fExt, std::function<void(int distance, const char* extension, FILE* file, char** header)>func) {
 	// read csv header strings
 	char** header = new char*[NumOfCols];
 	bool initHeader = true;
@@ -108,7 +110,7 @@ char** loopOverAllLogFiles(const char *path, std::function<void(int distance, co
 		int distance = (i%200)+1;
 		const char* ext = (i<200 ? "cm" : "m"); // 1-200cm & 1-25m
 		char name[50];
-		snprintf(name, 50*sizeof(char), "%d%s.MP4.pupilpos.csv", distance, ext);
+		snprintf(name, 50*sizeof(char), "%d%s.%s.pupilpos.csv", distance, ext, fExt);
 		
 		FILE* file = openFile(path, name);
 		// non existent files will be skipped automatically
@@ -160,22 +162,31 @@ size_t scanFile(FILE* file, MinMaxAvg* mma, MinMaxAvg* additional = nullptr) {
 //  ---------------------------------------------------------------
 
 int main( int argc, const char** argv ) {
-	if (argc != 2) {
+	if (argc != 2 && argc != 3) {
 		fputs("Missing argument value. Path to folder containing eyeFocus log files expected.\n\n", stderr);
 		return EXIT_SUCCESS;
+	} else if (argc == 3 && strlen(argv[1]) > 4) {
+		fputs("Usage: logEvaluator {mov|mp4|avi} ../series7/ \n\n", stderr);
+		return EXIT_FAILURE;
 	}
-	const char* folder = argv[1];
+	const char* videoExt = (argc == 2 ? "MP4" : argv[1]); // default to MP4
+	const char* folder = argv[ argc - 1 ];
 //	printf("Processing folder '%s':\n", folder);
-	printf("\n");
-	printf("  file |  pupil dist   |     ratio     | angle | samples \n");
-	printf("-------+---------------+---------------+-------+---------\n");
 	
 	MinMaxAvg global;
 	Difference globalDiff;
-	FILE* outErrFile = openFile(folder, "meanError.csv", true);
-	if (outErrFile) fprintf(outErrFile, "file,min,max,avg,max-min,avg-min,max-avg,type\n");
+	FILE* outErrFile = openFile(folder, file_error, true);
+	FILE* report = openFile(folder, file_report, true);
+	if (!outErrFile || !report) {
+		printf("Couldn't create output file '%s' at '%s'.\n", (!outErrFile ? file_error : file_report), folder);
+		return EXIT_FAILURE;
+	}
 	
-	char** head = loopOverAllLogFiles(folder, [&outErrFile,&global,&globalDiff](int fDist, const char* fExt, FILE* file, char** header)
+	fprintf(outErrFile, "file,min,max,avg,max-min,avg-min,max-avg,type\n");
+	fprintf(report, "\n  file |  pupil dist   |     ratio     | angle | samples ");
+	fprintf(report, "\n-------+---------------+---------------+-------+---------\n");
+	
+	char** head = loopOverAllLogFiles(folder, videoExt, [&global,&globalDiff,&outErrFile,&report](int fDist, const char* fExt, FILE* file, char** header)
 	{
 		MinMaxAvg local;
 		size_t count = scanFile(file, &local, &global);
@@ -188,34 +199,39 @@ int main( int argc, const char** argv ) {
 			float maxErrRatio = std::fmax(diff.toMin[10], diff.toMax[10]);
 			float pupilDistanceInMM = local.avg[10] * 35; // Hard coded 3.5cm eye corner distance
 			float angle = 2 * atanf( (pupilDistanceInMM / 2.0f) / (fDist * 10) ) * 180 / M_PI;
-			printf(" %3d%-2s | %6.2f ±%5.2f | %1.3f ± %1.3f | %5.2f | %4lu\n",
-				   fDist, fExt, local.avg[4], maxErrDist, local.avg[10], maxErrRatio, angle, count);
 			
-			if (outErrFile) {
-				for (int i = 0; i < NumOfCols; i++) {
-					fprintf(outErrFile, "%d%s,%1.3f,%1.3f,%1.3f,%1.3f,%1.3f,%1.3f,%s\n",
-							fDist, fExt, local.min[i], local.max[i], local.avg[i], diff.total[i], diff.toMin[i], diff.toMax[i], header[i]);
-				}
+			fprintf(report, " %3d%-2s | %6.2f ±%5.2f | %1.3f ± %1.3f | %5.2f | %4lu\n",
+					fDist, fExt, local.avg[4], maxErrDist, local.avg[10], maxErrRatio, angle, count);
+			
+			for (int i = 0; i < NumOfCols; i++) {
+				fprintf(outErrFile, "%d%s,%1.3f,%1.3f,%1.3f,%1.3f,%1.3f,%1.3f,%s\n",
+						fDist, fExt, local.min[i], local.max[i], local.avg[i], diff.total[i], diff.toMin[i], diff.toMax[i], header[i]);
 			}
 		}
 	});
-	
-	if (outErrFile) fclose(outErrFile);
+	fclose(outErrFile);
 	
 	size_t totalNumberOfLines = global.calculateAverage();
 	if (totalNumberOfLines > 0) {
-		printf("\nSamples total: %lu\n", totalNumberOfLines);
-		printf("  Pupil:  ( %6.2f -* %6.2f *- %6.2f )\n", global.min[4], global.avg[4], global.max[4]);
-		printf("  Corner: ( %6.2f -* %6.2f *- %6.2f )\n", global.min[9], global.avg[9], global.max[9]);
-		printf("  Ratio:  ( %6.3f -* %6.3f *- %6.3f )\n\n", global.min[10], global.avg[10], global.max[10]);
+		fprintf(report, "\nSamples total: %lu\n", totalNumberOfLines);
+		fprintf(report, "  Pupil:  ( %6.2f -* %6.2f *- %6.2f )\n", global.min[4], global.avg[4], global.max[4]);
+		fprintf(report, "  Corner: ( %6.2f -* %6.2f *- %6.2f )\n", global.min[9], global.avg[9], global.max[9]);
+		fprintf(report, "  Ratio:  ( %6.3f -* %6.3f *- %6.3f )\n\n", global.min[10], global.avg[10], global.max[10]);
 	}
 	
-	printf("Max variance:\n");
-	for (int i = 0; i < NumOfCols; i++) {
-		float maxErr = std::fmax(globalDiff.toMin[i], globalDiff.toMax[i]);
-		printf("%8.3f  %s\n", maxErr, head[i]);
+	if (head) {
+		fprintf(report, "Max variance:\n");
+		for (int i = 0; i < NumOfCols; i++) {
+			float maxErr = std::fmax(globalDiff.toMin[i], globalDiff.toMax[i]);
+			fprintf(report, "%8.3f  %s\n", maxErr, head[i]);
+		}
+		fprintf(report, "\n");
 	}
-	printf("\n");
+	fclose(report);
+	
+	printf("Writing file: %s\n", file_error);
+	printf("Writing file: %s\n", file_report);
+	printf("Done.\n\n");
 	
 	return EXIT_SUCCESS;
 }
