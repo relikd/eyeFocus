@@ -1,0 +1,5 @@
+PROJECT( eyePosResizer )
+cmake_minimum_required(VERSION 3.1)
+source_group("" FILES main.cpp)
+add_executable( eyePosResizer main.cpp )
+target_compile_features( eyePosResizer PRIVATE cxx_lambdas cxx_nullptr cxx_range_for )
