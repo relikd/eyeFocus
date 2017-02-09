@@ -55,10 +55,10 @@ namespace NS_Headmount {
 					points.push_back(cr);
 			}
 		}
-//		for (cv::Point &p : points) {
-//			p.x /= scalingFactor;
-//			p.y /= scalingFactor;
-//		}
+		for (cv::Point &p : points) {
+			p.x /= scalingFactor;
+			p.y /= scalingFactor;
+		}
 		fclose(file);
 		return points;
 	}
