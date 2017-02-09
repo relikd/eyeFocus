@@ -17,7 +17,7 @@ namespace Setup {
 		cv::Rect2i leftEyeBox, rightEyeBox;
 		cv::Rect2i leftEyeCorner, rightEyeCorner;
 		
-		Headmount(FrameReader fr, const char* savePath = NULL);
+		Headmount(FrameReader &fr, const char* savePath = NULL);
 	};
 }
 

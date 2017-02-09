@@ -79,7 +79,7 @@ void testPossibleCentersFormula(int x, int y, const cv::Mat &weight, double gx, 
 }
 
 // Works for me only for headmounted camera, but is up to 300x faster
-cv::Point2f fastEllipseContourFitting(cv::Mat image) {
+cv::Point2f fastEllipseContourFitting(const cv::Mat &image) {
 	std::vector<std::vector<cv::Point> > contours;
 	std::vector<cv::Vec4i> hierarchy;
 	findContours( image, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE );
@@ -100,14 +100,14 @@ cv::Point2f fastEllipseContourFitting(cv::Mat image) {
 	return ellipse.center;
 }
 
-cv::Point2f EyeCenter::findEyeCenter(cv::Mat eyebox) {
+cv::Point2f EyeCenter::findEyeCenter(const cv::Mat &eyebox) {
 	static bool tmp;
 	cv::String windowName = (tmp ? "Debug Left" : "Debug Right");
 	tmp = !tmp;
 	return findEyeCenter(eyebox, cv::Rect(0, 0, eyebox.cols, eyebox.rows), windowName);
 }
 
-cv::Point2f EyeCenter::findEyeCenter(cv::Mat face, cv::Rect eye, std::string debugWindow) {
+cv::Point2f EyeCenter::findEyeCenter(const cv::Mat &face, cv::Rect eye, std::string debugWindow) {
 	cv::Mat eyeROIUnscaled = face(eye);
 	
 #if kCameraIsHeadmounted // doesn't work so well anyway

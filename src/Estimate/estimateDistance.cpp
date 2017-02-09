@@ -8,6 +8,7 @@
 
 #include "estimateDistance.h"
 #include <cmath>
+#include "../constants.h"
 
 using namespace Estimate;
 
@@ -51,7 +52,7 @@ Distance::Distance(const char* path) {
 int Distance::estimate(cv::RotatedRect leftPupil, cv::RotatedRect rightPupil, cv::Point2f leftCorner, cv::Point2f rightCorner, bool byDegrees)
 {
 	float pupilCornerRatio = cv::norm(leftPupil.center - rightPupil.center) / cv::norm(leftCorner - rightCorner);
-	float halfPupilDistanceInMM = (pupilCornerRatio * 35) / 2.0f; // Hard coded 3.5cm eye corner distance
+	float halfPupilDistanceInMM = (pupilCornerRatio * kEyeCornerDistanceInMM) / 2.0f;
 	
 	FocalLevel bestMatching;
 	float bestError = 999;

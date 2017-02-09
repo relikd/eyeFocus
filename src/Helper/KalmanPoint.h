@@ -6,8 +6,8 @@
 //
 //
 
-#ifndef KalmanPoint_hpp
-#define KalmanPoint_hpp
+#ifndef KalmanPoint_h
+#define KalmanPoint_h
 
 #include <opencv2/video/tracking.hpp>
 
@@ -48,4 +48,4 @@ public:
 	}
 };
 
-#endif /* KalmanPoint_hpp */
+#endif /* KalmanPoint_h */

@@ -17,7 +17,7 @@ class FrameReader {
 	
 public:
 	cv::Mat frame;
-	const char* filePath = "live stream";
+	const char* filePath = "cam";
 	const bool isVideoFile;
 	short downScaling = 1;
 	

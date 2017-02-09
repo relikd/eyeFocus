@@ -12,7 +12,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <functional>
 #include "../constants.h"
-#include "../Helper/KalmanPoint.hpp"
+#include "../Helper/KalmanPoint.h"
 #include "ExCuSe/algo.h"
 #include "ElSe/algo.h"
 #include "Timm/findEyeCenter.h"
@@ -29,7 +29,7 @@ class FindKalmanPupil {
 	
 public:
 	/** Returns a Kalman smoothed center point. @param offset Optional eye box offset */
-	cv::RotatedRect findSmoothed(cv::Mat image, FindPupilFunction func, cv::Point2f offset = cv::Point2f(0,0)) {
+	cv::RotatedRect findSmoothed(const cv::Mat &image, FindPupilFunction func, cv::Point2f offset = cv::Point2f(0,0)) {
 		if (image.cols == 0 || image.rows == 0)
 			return cv::RotatedRect();
 		
@@ -62,7 +62,7 @@ public:
 
 class ExCuSe {
 public:
-	static cv::RotatedRect find(cv::Mat image) {
+	static cv::RotatedRect find(const cv::Mat &image) {
 		// ExCuSe eye tracking
 		cv::Mat pic_th = cv::Mat::zeros(image.rows, image.cols, CV_8U);
 		cv::Mat th_edges = cv::Mat::zeros(image.rows, image.cols, CV_8U);
@@ -72,14 +72,14 @@ public:
 
 class ElSe {
 public:
-	static cv::RotatedRect find(cv::Mat image) {
+	static cv::RotatedRect find(const cv::Mat &image) {
 		return ELSE::run(image);
 	};
 };
 
 class Timm {
 public:
-	static cv::RotatedRect find(cv::Mat image) {
+	static cv::RotatedRect find(const cv::Mat &image) {
 		// Gradient based eye tracking (Timm)
 		cv::RotatedRect ellipse;
 		ellipse.center = Detector::EyeCenter::findEyeCenter(image);

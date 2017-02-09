@@ -27,7 +27,7 @@ namespace Detector {
 		};
 		
 		/** Get both eye regions. @return face rect */
-		cv::Rect2i find(cv::Mat frame, cv::Rect2i* leftEye, cv::Rect2i* rightEye) {
+		cv::Rect2i find(const cv::Mat &frame, cv::Rect2i* leftEye, cv::Rect2i* rightEye) {
 			//cvtColor( frame, frame_gray, CV_BGR2GRAY );
 			//equalizeHist( frame_gray, frame_gray );
 			//cv::pow(frame_gray, CV_64F, frame_gray);

@@ -119,7 +119,7 @@ namespace NS_Headmount {
 }
 
 
-Headmount::Headmount(FrameReader fr, const char* savePath)
+Headmount::Headmount(FrameReader &fr, const char* savePath)
 {
 	std::vector<cv::Point> userPoints;
 	// load previous eye box

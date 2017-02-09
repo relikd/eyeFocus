@@ -30,7 +30,7 @@ namespace NS_SingleEye {
 	}
 }
 
-SingleEye::SingleEye(FrameReader fr, FindKalmanPupil* tracker) {
+SingleEye::SingleEye(FrameReader &fr, FindKalmanPupil* tracker) {
 	
 	std::vector<cv::Point2f> pupilAverage;
 	int internalSetIndex = 0;

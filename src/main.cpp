@@ -15,10 +15,10 @@
 static Detector::Face faceDetector = Detector::Face("res/haarcascade_frontalface_alt.xml");
 #endif
 
-void initHeadmount(FrameReader fr, cv::Rect2i eyeBox[2], cv::Rect2i eyeCorner[2]);
-void startSingleEyeTracking(FrameReader fr);
-void drawDistance(cv::Mat frame, int distance);
-void drawDebugPlot(cv::Mat frame, cv::Rect2i box, cv::RotatedRect pupil);
+void initHeadmount(FrameReader &fr, cv::Rect2i eyeBox[2], cv::Rect2i eyeCorner[2]);
+void startSingleEyeTracking(FrameReader &fr);
+void drawDistance(cv::Mat &frame, int distance);
+void drawDebugPlot(cv::Mat &frame, cv::Rect2i box, cv::RotatedRect pupil);
 
 int main( int argc, const char** argv ) {
 	if (argc != 2) {
@@ -79,7 +79,7 @@ int main( int argc, const char** argv ) {
 		
 		// Estimate distance
 		int est = distEst.estimate(pupil[0], pupil[1], corner[0], corner[1], false);
-		drawDistance(fr.frame, est);
+		drawDistance(img, est);
 		
 		imshow(fr.filePath, img);
 		if( cv::waitKey(10) == 27 ) // esc key
@@ -94,7 +94,7 @@ int main( int argc, const char** argv ) {
 // |
 //  ---------------------------------------------------------------
 
-void initHeadmount(FrameReader fr, cv::Rect2i eyeBox[2], cv::Rect2i eyeCorner[2]) {
+void initHeadmount(FrameReader &fr, cv::Rect2i eyeBox[2], cv::Rect2i eyeCorner[2]) {
 	char savePath[1024] = "cam.eyepos.txt";
 	if (fr.isVideoFile)
 		snprintf(savePath, 1024*sizeof(char), "%s.eyepos.txt", fr.filePath);
@@ -106,7 +106,7 @@ void initHeadmount(FrameReader fr, cv::Rect2i eyeBox[2], cv::Rect2i eyeCorner[2]
 }
 
 /** Single pupil is filling the complete cam image */
-void startSingleEyeTracking(FrameReader fr) {
+void startSingleEyeTracking(FrameReader &fr) {
 	FindKalmanPupil tracker;
 	// Single Eye Calibration
 	Setup::SingleEye singleEye = Setup::SingleEye(fr, &tracker);
@@ -133,13 +133,13 @@ void startSingleEyeTracking(FrameReader fr) {
 // |
 //  ---------------------------------------------------------------
 
-void drawDistance(cv::Mat frame, int distance) {
+void drawDistance(cv::Mat &frame, int distance) {
 	char strEst[6];
 	snprintf(strEst, 6*sizeof(char), "%dcm", distance);
 	cv::putText(frame, strEst, cv::Point(frame.cols - 220, frame.rows - 10), cv::FONT_HERSHEY_PLAIN, 5.0f, cv::Scalar(255,255,255));
 }
 
-void drawDebugPlot(cv::Mat frame, cv::Rect2i box, cv::RotatedRect pupil) {
+void drawDebugPlot(cv::Mat &frame, cv::Rect2i box, cv::RotatedRect pupil) {
 #if 0
 	// get tiled eye region
 	//  .-----------.

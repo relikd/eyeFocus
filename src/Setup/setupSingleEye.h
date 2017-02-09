@@ -20,7 +20,7 @@ namespace Setup {
 		cv::Point2f cm50 = cv::Point2f(0,0);
 		cv::Point2f cm80 = cv::Point2f(0,0);
 		
-		SingleEye(FrameReader fr, FindKalmanPupil* tracker);
+		SingleEye(FrameReader &fr, FindKalmanPupil* tracker);
 	};
 }
 
