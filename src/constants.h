@@ -6,6 +6,7 @@
 // Ask user to select eye reagion upfront. Otherwise find eyes with face detection
 #define kCameraIsHeadmounted 1
 #define kFullsizeSingleEyeMode 0
+#define kEnableImageWindow 1 // disable all image output to improve processing performance
 
 const cv::String window_setup_headmount = "Select eye area and corners";
 const cv::String window_setup_single_eye = "Monokular Headmounted Setup";
@@ -37,7 +38,7 @@ const int kEyeCornerSearchArea = 30;
 const int kEyeCornerDistanceInMM = 35; // 3.5cm
 
 // Smooth eye position over time
-const bool kUseKalmanFilter = false;
+const bool kUseKalmanFilter = true;
 const float kKalmanInitialError = 100000; // very large to jump to first found position immediately
 
 #if kFullsizeSingleEyeMode

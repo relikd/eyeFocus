@@ -2,7 +2,7 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/core/core.hpp>
-
+#include "../../constants.h"
 
 /*
  Version 1.0, 08.06.2015, Copyright University of Tübingen.
@@ -135,12 +135,14 @@ static void zero_around_region_th_border(cv::Mat *pic, cv::Mat *edges, cv::Mat *
 			circle(*th_edges, v, 3, 1234);
 		}
 	}
+//#if kEnableImageWindow
 //	static bool tmpp;
 //	if (tmpp)
 //		imshow("test1", *th_edges);
 //	else
 //		imshow("test2", *th_edges);
 //	tmpp = !tmpp;
+//#endif
 	
 	if (all_curves.size()>0) {
 		
@@ -184,6 +186,7 @@ static void zero_around_region_th_border(cv::Mat *pic, cv::Mat *edges, cv::Mat *
 		
 	}
 	
+//#if kEnableImageWindow
 //	for (cv::Point &v : selected_points) {
 //		circle(*th_edges, v, 3, 1234);
 //	}
@@ -194,5 +197,5 @@ static void zero_around_region_th_border(cv::Mat *pic, cv::Mat *edges, cv::Mat *
 //	else
 //		imshow("test2", *th_edges);
 //	tmpp = !tmpp;
-	
+//#endif
 }

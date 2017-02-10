@@ -27,7 +27,7 @@ return:
 float -> length of the hypotenuse
 
 */
-static float hypot(float a,float b)
+static float hypot_3(float a,float b)
 {
 	a=std::abs(a);
 	b=std::abs(b);
@@ -198,7 +198,7 @@ static cv::Mat canny_impl(cv::Mat *pic){
 		p_y=res_y.ptr<float>(i);
 
 		for(int j=0; j<res.cols; j++){
-			p_res[j]=hypot(p_x[j], p_y[j]);
+			p_res[j]=hypot_3(p_x[j], p_y[j]);
 		}
 	}
 

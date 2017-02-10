@@ -12,7 +12,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/core/core.hpp>
 
-
+#include "../../constants.h"
 
 #include "find_best_edge.h"
 #include "canny_impl.h"
@@ -25,19 +25,12 @@ namespace ELSE{
 
 static cv::RotatedRect run(cv::Mat input_img){
 
-
 	float rz_fakk=1;//float(input_img.cols)/384.0;
 
 	cv::Mat pic=cv::Mat::zeros(input_img.rows/rz_fakk, input_img.cols/rz_fakk, CV_8UC1);
 	cv::resize(input_img, pic,pic.size());
-
-
-
 	
-
 	cv::normalize(pic, pic, 0, 255, cv::NORM_MINMAX, CV_8U);
-
-
 
 	double border=0.05;//0.1
 	double mean_dist=3;
@@ -53,16 +46,8 @@ static cv::RotatedRect run(cv::Mat input_img){
 	int end_x =pic.cols-start_x;
 	int end_y =pic.rows-start_y;
 
-	
-
-
-
-
-
 	cv::Mat picpic = cv::Mat::zeros(end_y-start_y, end_x-start_x, CV_8U);
 	cv::Mat magni;
-
-	
 
 	for(int i=0; i<picpic.cols; i++)
 		for(int j=0; j<picpic.rows; j++){
@@ -72,24 +57,22 @@ static cv::RotatedRect run(cv::Mat input_img){
 
 	cv::Mat detected_edges2 = canny_impl(&picpic,&magni);
 	
-
-
 	cv::Mat detected_edges = cv::Mat::zeros(pic.rows, pic.cols, CV_8U);
 	for(int i=0; i<detected_edges2.cols; i++)
 		for(int j=0; j<detected_edges2.rows; j++){
 			detected_edges.data[(detected_edges.cols*(start_y+j))+(start_x+i)]=detected_edges2.data[(detected_edges2.cols*j)+i];
 		}
 
-
-
 	filter_edges(&detected_edges, start_x, end_x, start_y, end_y);
+	
+#if kEnableImageWindow
 	static bool tmpp;
 	if (tmpp)
 		imshow("test1", detected_edges);
 	else
 		imshow("test2", detected_edges);
 	tmpp = !tmpp;
-	
+#endif
 
 
 	ellipse=find_best_edge(&pic, &detected_edges, &magni, start_x, end_x, start_y, end_y,mean_dist, inner_color_range);
@@ -101,25 +84,12 @@ static cv::RotatedRect run(cv::Mat input_img){
 
 	}
 
-
 	ellipse.size.height=ellipse.size.height*rz_fakk;
 	ellipse.size.width=ellipse.size.width*rz_fakk;
 
 	ellipse.center.x=ellipse.center.x*rz_fakk;
 	ellipse.center.y=ellipse.center.y*rz_fakk;
 
-
 	return ellipse;
-	
-
-
-	
 }
-
-
-
-
 }
-
-
-

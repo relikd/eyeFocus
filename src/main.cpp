@@ -42,8 +42,10 @@ int main( int argc, const char** argv ) {
 #endif
 	
 	
+#if kEnableImageWindow
 	cv::namedWindow(fr.filePath, CV_WINDOW_NORMAL);
 	cv::moveWindow(fr.filePath, 400, 100);
+#endif
 	
 	char pupilPosLogFile[1024];
 	snprintf(pupilPosLogFile, 1024*sizeof(char), "%s.pupilpos.csv", fr.filePath);
@@ -69,21 +71,25 @@ int main( int argc, const char** argv ) {
 		cv::RotatedRect pupil[2];
 		cv::Point2f corner[2];
 		for (int i = 0; i < 2; i++) {
-			pupil[i] = pupilDetector[i].findSmoothed(img(eyeBox[i]), ElSe::find, eyeBox[i].tl());
+			pupil[i] = pupilDetector[i].findSmoothed(img(eyeBox[i]), Timm::find, eyeBox[i].tl());
 			corner[i] = cornerDetector[i].findByAvgColor(img(eyeCorner[i]), eyeCorner[i].tl());
+#if kEnableImageWindow
 			drawMarker(img, corner[i], 200);
 			drawDebugPlot(img, eyeBox[i], pupil[i]);
+#endif
 		}
 		log.writePointPair(pupil[0].center, pupil[1].center, false);
 		log.writePointPair(corner[0], corner[1], true);
 		
+#if kEnableImageWindow
 		// Estimate distance
 		int est = distEst.estimate(pupil[0], pupil[1], corner[0], corner[1], false);
 		drawDistance(img, est);
-		
 		imshow(fr.filePath, img);
+		
 		if( cv::waitKey(10) == 27 ) // esc key
 			return EXIT_SUCCESS;
+#endif
 	}
 	return EXIT_SUCCESS;
 }

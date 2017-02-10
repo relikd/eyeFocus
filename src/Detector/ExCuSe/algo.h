@@ -12,6 +12,7 @@
 
 
 #include "canny_ml.h"
+#include "../../constants.h"
 
 
 
@@ -114,13 +115,14 @@ static cv::RotatedRect run(cv::Mat pic, cv::Mat *pic_th, cv::Mat *th_edges, bool
 			detected_edges.at<uchar>(start_y+j, start_x+i) = detected_edges2.at<uchar>(j,i);
 		}
 
-
+#if kEnableImageWindow
 	static bool tmpp;
 	if (tmpp)
 		imshow("test1", detected_edges);
 	else
 		imshow("test2", detected_edges);
 	tmpp = !tmpp;
+#endif
 	
 	remove_points_with_low_angle(detected_edges, start_x, end_x, start_y, end_y);
 
@@ -176,14 +178,14 @@ static cv::RotatedRect run(cv::Mat pic, cv::Mat *pic_th, cv::Mat *th_edges, bool
 		zero_around_region_th_border(&internalPic, &detected_edges, th_edges, threshold_up, edge_to_th, mean_dist, area_edges, &ellipse);
 	}
 	
-	//	cv::ellipse(internalPic, ellipse, 1243);
+//#if kEnableImageWindow
+//	cv::ellipse(internalPic, ellipse, 1243);
 //	cv::circle(internalPic, ellipse.center, 3, 1242);
 //	imshow("one", detected_edges);
 //	imshow("two", detected_edges2);
 //	imshow("threes", internalPic);
 //	cv::waitKey(10);
-
+//#endif
 	return ellipse;
-	
 }
 }

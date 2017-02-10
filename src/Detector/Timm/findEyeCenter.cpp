@@ -150,7 +150,9 @@ cv::Point2f EyeCenter::findEyeCenter(const cv::Mat &face, cv::Rect eye, std::str
 			}
 		}
 	}
+#if kEnableImageWindow
 	imshow(debugWindow, gradientX);
+#endif
 	
 	//-- Create a blurred and inverted image for weighting
 	cv::Mat weight;

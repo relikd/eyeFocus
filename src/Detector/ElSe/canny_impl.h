@@ -22,7 +22,7 @@
 namespace ELSE{
 
 
-static float hypot(float a,float b)
+static float hypot_2(float a,float b)
 {
 	a=std::abs(a);
 	b=std::abs(b);
@@ -190,7 +190,7 @@ static cv::Mat canny_impl(cv::Mat *pic, cv::Mat *magni){
 
 			//p_res[j]=__ieee754_hypot(p_x[j], p_y[j]);
 
-			p_res[j]=hypot(p_x[j], p_y[j]);
+			p_res[j]=hypot_2(p_x[j], p_y[j]);
 		}
 	}
 
