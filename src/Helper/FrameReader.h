@@ -47,7 +47,7 @@ public:
 			if (isVideoFile)
 				exit(EXIT_SUCCESS); // exit on EOF
 			fputs(" --(!) No captured frame -- Break!\n", stderr);
-			frame = cv::Mat::zeros(640, 480, CV_8UC1);
+			frame = cv::Mat::zeros(480, 640, CV_8UC1);
 			return false;
 		}
 		
