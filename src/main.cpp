@@ -3,14 +3,12 @@
 #include "Setup/setupEyeCoordinateSpace.h"
 #include "Setup/setupHeadmount.h"
 #include "Setup/setupSingleEye.h"
+#include "Setup/setupDualCam.h"
 #include "Detector/findFace.h"
 #include "Detector/findEyeCorner.h"
 #include "Estimate/estimateDistance.h"
 #include "Helper/FrameReader.h"
 #include "Helper/LogWriter.h"
-#include <thread>
-
-static int currentFocusLevel = 85;
 
 #if !kCameraIsHeadmounted
 //-- Note, either copy these two files from opencv/d1ata/haarscascades to your current folder, or change these locations
@@ -19,58 +17,6 @@ static Detector::Face faceDetector = Detector::Face("res/haarcascade_frontalface
 
 void startNormalTracking(FrameReader &fr);
 void startSingleEyeTracking(FrameReader &fr);
-void startDualCamTracking();
-
-void writeCameraStreamToDisk(int cam) {
-	cv::VideoCapture vc(cam);
-	vc.set(CV_CAP_PROP_FRAME_WIDTH, 640);
-	vc.set(CV_CAP_PROP_FRAME_HEIGHT, 480);
-	vc.set(CV_CAP_PROP_FPS, 60);
-	
-	cv::Mat img;
-	size_t f = 0;
-	while (++f) {
-		if (currentFocusLevel % 10 == 5) {
-			f = 0;
-			continue;
-		}
-		vc.read(img);
-		char buffer[200];
-		snprintf(buffer, 200*sizeof(char), "%d/%d/frame_%lu.jpg", cam, currentFocusLevel, f);
-		imwrite(buffer, img);
-	}
-}
-
-void startMultiThreadingDualCamRead() {
-	bool bothInSync = false;
-	std::thread a([&bothInSync]{
-		while (!bothInSync) { /* nothing */ }
-		writeCameraStreamToDisk(0);
-	});
-	std::thread b([&bothInSync]{
-		while (!bothInSync) { /* nothing */ }
-		writeCameraStreamToDisk(1);
-	});
-	printf("running..\n");
-	bothInSync = true;
-	
-	cv::String window = "Press space to move 5cm nearer";
-	cv::namedWindow(window, CV_WINDOW_NORMAL);
-	cv::moveWindow(window, 50, 100);
-	imshow(window, cv::Mat::zeros(480, 640, CV_8UC1));
-	
-	while (true) {
-		int key = cv::waitKey(100);
-		if (key == 27) {
-			exit(EXIT_SUCCESS);
-		} else if (key == ' ') {
-			currentFocusLevel -= 5;
-			printf("Level: %d\n", currentFocusLevel);
-		}
-	}
-	a.join();
-	b.join();
-}
 
 int main( int argc, const char** argv ) {
 	if (argc != 2) {
@@ -79,12 +25,17 @@ int main( int argc, const char** argv ) {
 	}
 	
 #if 0
-	startMultiThreadingDualCamRead();
+	Setup::DualCam::writeStreamToDisk(80);
 	return EXIT_SUCCESS;
 #endif
 	
 #if kFullsizeDualCamMode
-	startDualCamTracking();
+	Setup::DualCam(NULL, NULL);
+//	for (int i=10; i<=80; i+=10) {
+//		char file[20];
+//		snprintf(file, 20*sizeof(char), "%dcm.MP4", i);
+//		Setup::DualCam("../../testVideos/series10/", file);
+//	}
 	return EXIT_SUCCESS;
 #endif
 	
@@ -172,56 +123,6 @@ void startSingleEyeTracking(FrameReader &fr) {
 		
 		drawDistance(fr.frame, est);
 		imshow(fr.filePath, fr.frame);
-		
-		if( cv::waitKey(10) == 27 ) // esc key
-			exit(EXIT_SUCCESS);
-	}
-}
-
-//  ---------------------------------------------------------------
-// |
-// |  Dual Cam Tracking Mode (2 Cameras, 1 Pupil each)
-// |
-//  ---------------------------------------------------------------
-
-/** Same as startSingleEyeTracking() but with two cameras */
-void startDualCamTracking() {
-	FrameReader fr[2] = {FrameReader(1), FrameReader(0)}; // USB Cam 1 & 2
-	FindKalmanPupil pupilDetector[2];
-	
-	fr[0].readNext();
-	cv::Point2f nullPoint;
-	
-	cv::Rect2i crop = cv::Rect2i(0, 0, fr[0].frame.cols, fr[0].frame.rows);
-	crop = cv::Rect2i(crop.width/4, crop.height/4, crop.width/2, crop.height/2);
-	
-	char pupilPosLogFile[1024];
-	snprintf(pupilPosLogFile, 1024*sizeof(char), "%s.pupilpos.csv", fr[0].filePath);
-	LogWriter log( pupilPosLogFile, "pLx,pLy,pRx,pRy,PupilDistance,cLx,cLy,cRx,cRy,CornerDistance\n" );
-	
-	
-#if kEnableImageWindow
-	cv::namedWindow("Cam 0", CV_WINDOW_NORMAL);
-	cv::namedWindow("Cam 1", CV_WINDOW_NORMAL);
-	cv::moveWindow("Cam 0", 50, 100);
-	cv::moveWindow("Cam 1", 700, 100);
-#endif
-	
-	while (true) {
-		cv::RotatedRect pupil[2];
-		// Process both cams
-		for (int i = 0; i < 2; i++) {
-			if (fr[i].readNext()) {
-				cv::Mat img = fr[i].frame;
-				pupil[i] = pupilDetector[i].findSmoothed(img(crop), ElSe::find, crop.tl());
-#if kEnableImageWindow
-				drawDebugPlot(img, crop, pupil[i]);
-#endif
-				imshow((i==0?"Cam 0":"Cam 1"), img);
-			}
-		}
-		log.writePointPair(pupil[0].center, pupil[1].center, false);
-		log.writePointPair(nullPoint, nullPoint, true);
 		
 		if( cv::waitKey(10) == 27 ) // esc key
 			exit(EXIT_SUCCESS);

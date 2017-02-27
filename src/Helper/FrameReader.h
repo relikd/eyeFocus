@@ -44,8 +44,8 @@ public:
 		capture.read(img);
 		
 		if( img.empty() ) {
-			if (isVideoFile)
-				exit(EXIT_SUCCESS); // exit on EOF
+//			if (isVideoFile)
+//				exit(EXIT_SUCCESS); // exit on EOF
 			fputs(" --(!) No captured frame -- Break!\n", stderr);
 			frame = cv::Mat::zeros(480, 640, CV_8UC1);
 			return false;
