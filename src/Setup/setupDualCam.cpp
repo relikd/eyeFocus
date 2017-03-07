@@ -98,9 +98,15 @@ void DualCam::writeStreamToDisk(int startFocusCM) {
 //}
 
 std::vector<int> points;
-static const int betweenCamDistancePX = 295; // 18.08mm
+static const int betweenCamDistancePX = 930;//295; // 18.08mm
 
 bool setupFinished(cv::Mat &frame, cv::Point2f pLeft, cv::Point2f pRight) {
+#if 0
+	points.push_back(1);
+	points.push_back(1);
+	points.push_back(1);
+	return true;
+#endif
 	cv::String infoText;
 	switch (points.size()) {
 		case 0: infoText = "Focus on 20 cm and press spacebar"; break;
@@ -155,7 +161,7 @@ DualCam::DualCam(const char *path, const char* file) {
 	cv::Point2f nullPoint;
 	
 	cv::Rect2i crop = cv::Rect2i(0, 0, fr[0].frame.cols, fr[0].frame.rows);
-	crop = cv::Rect2i(crop.width/4, crop.height/4, crop.width/2, crop.height/2);
+	crop = cv::Rect2i(crop.width/6, crop.height/10, crop.width/1.5, crop.height/1.5);
 	
 	char pupilPosLogFile[1024];
 	snprintf(pupilPosLogFile, 1024*sizeof(char), "%s/%s.pupilpos.csv", path, file);
@@ -163,8 +169,10 @@ DualCam::DualCam(const char *path, const char* file) {
 	
 	
 #if kEnableImageWindow
+	cv::namedWindow("Distance", CV_WINDOW_NORMAL);
 	cv::namedWindow("Cam 0", CV_WINDOW_NORMAL);
 	cv::namedWindow("Cam 1", CV_WINDOW_NORMAL);
+	cv::moveWindow("Distance", 370, 200);
 	cv::moveWindow("Cam 0", 50, 100);
 	cv::moveWindow("Cam 1", 700, 100);
 #endif
@@ -187,7 +195,7 @@ DualCam::DualCam(const char *path, const char* file) {
 				continue;
 			}
 		}
-//		log.writePointPair(pupil[0].center, pupil[1].center, false);
+//		log.writePointPair(pupil[0].center, pupil[1].center + cv::Point2f(640+betweenCamDistancePX,0), false);
 //		log.writePointPair(nullPoint, nullPoint, true);
 		
 		cv::Mat blackFrame = cv::Mat::zeros(fr[0].frame.size(), CV_8UC1);
@@ -195,7 +203,7 @@ DualCam::DualCam(const char *path, const char* file) {
 			int xdist = (blackFrame.cols - pupil[0].center.x) + betweenCamDistancePX + pupil[1].center.x;
 			int est = Estimate::Distance::singlePupilHorizontal(xdist, points[0], points[1], points[2]);
 			drawDistance2(blackFrame, est);
-			imshow("dist", blackFrame);
+			imshow("Distance", blackFrame);
 			if( cv::waitKey(10) == 27 ) // esc key
 				exit(EXIT_SUCCESS);
 		} else {

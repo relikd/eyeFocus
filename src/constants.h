@@ -6,7 +6,7 @@
 // Ask user to select eye reagion upfront. Otherwise find eyes with face detection
 #define kCameraIsHeadmounted 1
 #define kFullsizeSingleEyeMode 0
-#define kFullsizeDualCamMode 0
+#define kFullsizeDualCamMode 1
 #define kEnableImageWindow 1 // disable all image output to improve processing performance
 
 const cv::String window_setup_headmount = "Select eye area and corners";
