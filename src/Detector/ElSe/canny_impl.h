@@ -199,10 +199,10 @@ static cv::Mat canny_impl(cv::Mat *pic, cv::Mat *magni){
 	//th selection
 	
 	int PercentOfPixelsNotEdges=0.7 * magni->cols * magni->rows;
-	float ThresholdRatio=0.4;
+//	float ThresholdRatio=0.4;
 
 	float high_th=0;
-	float low_th=0;
+//	float low_th=0;
 
 	int h_sz=64;
 	int hist[64];
@@ -232,7 +232,7 @@ static cv::Mat canny_impl(cv::Mat *pic, cv::Mat *magni){
 			break;
 		}
 	}
-	low_th=ThresholdRatio*high_th;
+//	low_th=ThresholdRatio*high_th;
 
 
 

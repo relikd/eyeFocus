@@ -10,28 +10,31 @@
 #define estimateDistance_hpp
 
 #include <opencv2/imgproc/imgproc.hpp>
-#include <stdio.h>
 #include <vector>
 
 namespace Estimate {
-	struct FocalLevel {
-		int distance = 0;
-		float min, avg, max;
-	};
-	
 	
 	class Distance {
-		FILE* file = NULL;
-		std::vector<FocalLevel> listDegrees;
-		std::vector<FocalLevel> listRatios;
+		int unknowns = 0;
+		double* _x = new double[1];
 		
 	public:
 		/** @param path Path to distance level configuration file */
-		Distance(const char* path);
+		Distance() {};
+		~Distance() {
+			delete [] _x;
+		}
 		
-		int estimate(cv::RotatedRect leftPupil, cv::RotatedRect rightPupil, cv::Point2f leftCorner, cv::Point2f rightCorner, bool byDegrees = true); // otherwise by ratio
+		void initialize(std::vector<float> pupilDistance, std::vector<int> focusDistance);
+		void initialize(int count, float* pupilDistance, int* focusDistance);
 		
-		static int singlePupilHorizontal(float x, float cm20, float cm50, float cm80);
+		double estimate(float pplDist);
+		void printEquation(bool newline = true);
+		
+		static void drawOnFrame(cv::Mat &frame, double distance);
+		
+	private:
+		inline int e(int index); // exponent calculation
 	};
 }
 

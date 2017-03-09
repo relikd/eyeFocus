@@ -8,108 +8,100 @@
 
 #include "estimateDistance.h"
 #include <cmath>
-#include "../constants.h"
+#include "../Helper/QR.h"
 
 using namespace Estimate;
 
-bool readLine(FILE* f, FocalLevel *degrees, FocalLevel *ratio) {
-	int dist = 0;
-	if (fscanf(f, "%d;%f;%f;%f;%f;%f;%f\n", &dist, &degrees->min, &degrees->avg, &degrees->max, &ratio->min, &ratio->avg, &ratio->max) != EOF) {
-		degrees->distance = dist;
-		ratio->distance = dist;
-		return true;
+
+
+void Distance::initialize(std::vector<float> pupilDistance, std::vector<int> focusDistance) {
+	if (pupilDistance.size() != focusDistance.size() || pupilDistance.size() == 0) {
+		fputs("Distance Estimation vector size mismatch. pupilDistance and focusDistance must have same size().\n", stderr);
+		return;
 	}
-	return false;
+	
+	int count = pupilDistance.size();
+	
+	float* pplDist = new float[count];
+	int* fcsDist = new int[count];
+	for (int i = 0; i < count; i++) {
+		pplDist[i] = pupilDistance[i];
+		fcsDist[i] = focusDistance[i];
+	}
+	
+	initialize(count, pplDist, fcsDist);
+	
+	delete [] pplDist;
+	delete [] fcsDist;
 }
 
-Distance::Distance(const char* path) {
-	if (path == NULL)
-		return;
+void Distance::initialize(int count, float* pupilDistance, int* focusDistance) {
+	int equations = count;
+	unknowns = 0;
 	
-#ifdef _WIN32
-	fopen_s(&file, path, "r");
-#else
-	file = fopen(path, "r");
-#endif
-	
-	if (file) {
-		fscanf(file, "[Config]\n");
-		FocalLevel degree;
-		FocalLevel ratio;
-		while (readLine(file, &degree, &ratio)) {
-			if (degree.distance <= 50) {
-				listDegrees.push_back(degree);
-				listRatios.push_back(ratio);
+	int* uniqueFocusDist = new int[count];
+	for (int i = 0; i < count; i++) {
+		bool duplicate = false;
+		for (int u = 0; u < unknowns; u++) {
+			if (uniqueFocusDist[u] == focusDistance[i]) {
+				duplicate = true;
+				break;
 			}
 		}
-		fclose(file);
-	} else {
-		fputs("Error loading pre calculated angles file.\n", stderr);
-//		exit(EXIT_FAILURE);
+		if (!duplicate) {
+			uniqueFocusDist[unknowns] = focusDistance[i];
+			++unknowns;
+		}
 	}
+	delete [] uniqueFocusDist;
+	
+	
+	double* A = new double[unknowns * equations];
+	double* b = new double[equations];
+	
+	for (int i = 0; i < count; i++) {
+		for (int a = 0; a < unknowns; a++) {
+			A[i * unknowns + a] = pow(pupilDistance[i], e(a));
+		}
+		b[i] = focusDistance[i];
+		printf("%d mm => %1.1f px\n", focusDistance[i], pupilDistance[i]);
+	}
+	
+	delete [] _x;
+	_x = QR::solve(equations, unknowns, A, b);
+	delete [] A;
+	delete [] b;
 }
 
-int Distance::estimate(cv::RotatedRect leftPupil, cv::RotatedRect rightPupil, cv::Point2f leftCorner, cv::Point2f rightCorner, bool byDegrees)
-{
-	float pupilCornerRatio = cv::norm(leftPupil.center - rightPupil.center) / cv::norm(leftCorner - rightCorner);
-	float halfPupilDistanceInMM = (pupilCornerRatio * kEyeCornerDistanceInMM) / 2.0f;
-	
-	FocalLevel bestMatching;
-	float bestError = 999;
-	
-	for (FocalLevel &fl : (byDegrees ? listDegrees : listRatios) ) {
-		float angle;
-		if (byDegrees)
-			angle = 2 * atanf( halfPupilDistanceInMM / (fl.distance * 10) ) * 180 / M_PI;
-		else
-			angle = pupilCornerRatio;
-		
-		float range = fl.max - fl.min;
-		float curError = std::fabs(angle - fl.avg);
-		if (byDegrees) curError /= range;
-		else           curError *= range;
-		
-		if (bestError > curError) {
-			bestError = curError;
-			bestMatching = fl;
-			//printf("set: ");
-		}
-		//printf("%d %1.3f\n", fl.distance, curError);
-	}
-	return bestMatching.distance;
+double Distance::estimate(float pplDist) {
+	double sum = 0;
+	for (int i = 0; i < unknowns; i++)
+		sum += _x[i] * pow(pplDist, e(i));
+	return sum;
 }
 
-// static
-int Distance::singlePupilHorizontal(float x, float cm20, float cm50, float cm80) {
-	double lowerRange = std::pow(cm50 / cm20, 1/30.0);
-	double upperRange = std::pow(cm80 / cm50, 1/30.0);
-	
-	float initLower = cm20 * std::pow(lowerRange, -10); // start at 10cm
-	float initUpper = cm50;
-	
-	int bestMatchLower = 0;
-	int bestMatchUpper = 0;
-	
-	float diff = 999;
-	do {
-		float newDiff = std::fabs(initLower - x);
-		if (newDiff > diff) {
-			return 10 + bestMatchLower - 1;
-		}
-		diff = newDiff;
-		initLower *= lowerRange;
-	} while (++bestMatchLower < 40);
-	
-	diff = 999;
-	
-	do {
-		float newDiff = std::fabs(initUpper - x);
-		if (newDiff > diff) {
-			return 50 + bestMatchUpper - 1;
-		}
-		diff = newDiff;
-		initUpper *= upperRange;
-	} while (++bestMatchUpper < 30);
-	
-	return 100;
+inline int Distance::e(int index) {
+	return unknowns - index - 1; // Ax^2 + Bx + C  // (without -1: Ax^3 + Bx^2 + Cx )
+}
+
+void Distance::printEquation(bool newline) {
+	if (newline)
+		printf("\nf(x) = ");
+	for (int i = 0; i < unknowns; i++) {
+		if (_x[i] >= 0 && i != 0)
+			printf("+");
+		printf("%f", _x[i]);
+		if (e(i) > 0)
+			printf("x");
+		if (e(i) > 1)
+			printf("^%d", e(i));
+	}
+	if (newline)
+		printf("\n");
+}
+
+void Distance::drawOnFrame(cv::Mat &frame, double distance) {
+	char strEst[6];
+	snprintf(strEst, 6*sizeof(char), "%dcm", cvRound(distance/10));
+	cv::putText(frame, strEst, cv::Point(frame.cols - 220, frame.rows - 10), cv::FONT_HERSHEY_PLAIN, 5.0f, cv::Scalar(255,255,255));
 }

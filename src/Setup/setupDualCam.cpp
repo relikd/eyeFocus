@@ -97,8 +97,12 @@ void DualCam::writeStreamToDisk(int startFocusCM) {
 //	printf("\n");
 //}
 
-std::vector<int> points;
+std::vector<float> points;
 static const int betweenCamDistancePX = 930;//295; // 18.08mm
+
+float distanceBetweenPoints(cv::Point2f left, cv::Point2f right, int camWidth) {
+	return (camWidth - left.x) + betweenCamDistancePX + right.x;
+}
 
 bool setupFinished(cv::Mat &frame, cv::Point2f pLeft, cv::Point2f pRight) {
 #if 0
@@ -130,21 +134,14 @@ bool setupFinished(cv::Mat &frame, cv::Point2f pLeft, cv::Point2f pRight) {
 				cv::destroyWindow("setup");
 				return true; // user setup complete
 			}
-			int xdist = (frame.cols - pLeft.x) + betweenCamDistancePX + pRight.x;
-			points.push_back(xdist);
+			points.push_back(distanceBetweenPoints(pLeft, pRight, frame.cols));
 			break;
 	}
 	return false;
 }
 
-void drawDistance2(cv::Mat &frame, int distance) {
-	char strEst[6];
-	snprintf(strEst, 6*sizeof(char), "%dcm", distance);
-	cv::putText(frame, strEst, cv::Point(frame.cols - 220, frame.rows - 10), cv::FONT_HERSHEY_PLAIN, 5.0f, cv::Scalar(255,255,255));
-}
-
 DualCam::DualCam(const char *path, const char* file) {
-	//	FrameReader fr[2] = {FrameReader(1), FrameReader(0)}; // USB Cam 1 & 2
+//	FrameReader fr[2] = {FrameReader(1), FrameReader(0)}; // USB Cam 1 & 2
 	char one[300], two[300];
 	if (path == NULL && file == NULL) {
 		one[0] = '1'; one[1] = '\0'; // USB Cam 1 & 2
@@ -177,6 +174,9 @@ DualCam::DualCam(const char *path, const char* file) {
 	cv::moveWindow("Cam 1", 700, 100);
 #endif
 	
+	
+	Estimate::Distance distEst;
+	
 	bool finishedYet = false;
 	
 	while (true) {
@@ -195,19 +195,23 @@ DualCam::DualCam(const char *path, const char* file) {
 				continue;
 			}
 		}
-//		log.writePointPair(pupil[0].center, pupil[1].center + cv::Point2f(640+betweenCamDistancePX,0), false);
-//		log.writePointPair(nullPoint, nullPoint, true);
 		
 		cv::Mat blackFrame = cv::Mat::zeros(fr[0].frame.size(), CV_8UC1);
+//		log.writePointPair(pupil[0].center, pupil[1].center + cv::Point2f(blackFrame.cols+betweenCamDistancePX,0), false);
+//		log.writePointPair(nullPoint, nullPoint, true);
+		
 		if (finishedYet) {
-			int xdist = (blackFrame.cols - pupil[0].center.x) + betweenCamDistancePX + pupil[1].center.x;
-			int est = Estimate::Distance::singlePupilHorizontal(xdist, points[0], points[1], points[2]);
-			drawDistance2(blackFrame, est);
+			double est = distEst.estimate( distanceBetweenPoints(pupil[0].center, pupil[1].center, blackFrame.cols) );
+			Estimate::Distance::drawOnFrame(blackFrame, est);
 			imshow("Distance", blackFrame);
 			if( cv::waitKey(10) == 27 ) // esc key
 				exit(EXIT_SUCCESS);
 		} else {
 			finishedYet = setupFinished(blackFrame, pupil[0].center, pupil[1].center);
+			if (finishedYet) {
+				distEst.initialize(points, std::vector<int>{200, 500, 800});
+				distEst.printEquation();
+			}
 		}
 	}
 }

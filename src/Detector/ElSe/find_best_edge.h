@@ -320,7 +320,7 @@ static std::vector<std::vector<cv::Point>> get_curves(cv::Mat *pic, cv::Mat *edg
 				if(add_curve) {
 					
 					if(inner_color_range>=0){
-						mean_inner_gray=0;
+//						mean_inner_gray=0;
 
 
 

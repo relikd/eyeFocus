@@ -58,12 +58,6 @@ int main( int argc, const char** argv ) {
 // |
 //  ---------------------------------------------------------------
 
-void drawDistance(cv::Mat &frame, int distance) {
-	char strEst[6];
-	snprintf(strEst, 6*sizeof(char), "%dcm", distance);
-	cv::putText(frame, strEst, cv::Point(frame.cols - 220, frame.rows - 10), cv::FONT_HERSHEY_PLAIN, 5.0f, cv::Scalar(255,255,255));
-}
-
 void drawDebugPlot(cv::Mat &frame, cv::Rect2i box, cv::RotatedRect pupil) {
 #if 0
 	// get tiled eye region
@@ -115,13 +109,18 @@ void startSingleEyeTracking(FrameReader &fr) {
 	// use full video size for eye tracking, adjust to eg. remove edge
 	cv::Rect2i clip = cv::Rect2i(0, 0, fr.frame.cols, fr.frame.rows);
 	
+	Estimate::Distance distEst;
+	float pplDist[3] = {singleEye.cm20.x, singleEye.cm50.x, singleEye.cm80.x};
+	int focusDist[3] = {200, 500, 800};
+	distEst.initialize(3, pplDist, focusDist);
+	
 	while ( fr.readNext() ) {
 		cv::RotatedRect point = tracker.findSmoothed(fr.frame(clip), ElSe::find, clip.tl());
 		circle(fr.frame, point.center, 3, 1234);
 		ellipse(fr.frame, point, 1234);
-		int est = Estimate::Distance::singlePupilHorizontal(point.center.x, singleEye.cm20.x, singleEye.cm50.x, singleEye.cm80.x);
+		double est = distEst.estimate(point.center.x);
 		
-		drawDistance(fr.frame, est);
+		Estimate::Distance::drawOnFrame(fr.frame, est);
 		imshow(fr.filePath, fr.frame);
 		
 		if( cv::waitKey(10) == 27 ) // esc key
@@ -166,7 +165,7 @@ void startNormalTracking(FrameReader &fr) {
 	
 	FindKalmanPupil pupilDetector[2];
 	Detector::EyeCorner cornerDetector[2]; cornerDetector[1].flipKernelToRightCorner();
-	Estimate::Distance distEst("estimate.cfg");
+//	Estimate::Distance distEst("estimate.cfg");
 	
 	while ( fr.readNext() ) {
 		cv::Mat img = fr.frame;
@@ -196,8 +195,8 @@ void startNormalTracking(FrameReader &fr) {
 		
 #if kEnableImageWindow
 		// Estimate distance
-		int est = distEst.estimate(pupil[0], pupil[1], corner[0], corner[1], false);
-		drawDistance(img, est);
+//		int est = distEst.estimate(pupil[0], pupil[1], corner[0], corner[1], false);
+//		Estimate::Distance::drawOnFrame(img, est);
 		imshow(fr.filePath, img);
 		
 		if( cv::waitKey(10) == 27 ) // esc key
