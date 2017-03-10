@@ -8,6 +8,7 @@
 
 #include "estimateDistance.h"
 #include <cmath>
+#include <fstream>
 #include "../Helper/QR.h"
 
 using namespace Estimate;
@@ -84,6 +85,12 @@ inline int Distance::e(int index) {
 	return unknowns - index - 1; // Ax^2 + Bx + C  // (without -1: Ax^3 + Bx^2 + Cx )
 }
 
+void Distance::drawOnFrame(cv::Mat &frame, double distance) {
+	char strEst[6];
+	snprintf(strEst, 6*sizeof(char), "%dcm", cvRound(distance/10));
+	cv::putText(frame, strEst, cv::Point(frame.cols - 220, frame.rows - 10), cv::FONT_HERSHEY_PLAIN, 5.0f, cv::Scalar(255,255,255));
+}
+
 void Distance::printEquation(bool newline) {
 	if (newline)
 		printf("\nf(x) = ");
@@ -100,8 +107,32 @@ void Distance::printEquation(bool newline) {
 		printf("\n");
 }
 
-void Distance::drawOnFrame(cv::Mat &frame, double distance) {
-	char strEst[6];
-	snprintf(strEst, 6*sizeof(char), "%dcm", cvRound(distance/10));
-	cv::putText(frame, strEst, cv::Point(frame.cols - 220, frame.rows - 10), cv::FONT_HERSHEY_PLAIN, 5.0f, cv::Scalar(255,255,255));
+void Distance::printAccuracy(int start, int end, const char* path) {
+	if (end < start) {
+		int tmp = start;
+		start = end;
+		end = tmp;
+	}
+	++end;
+	
+	std::ofstream outputStream;
+	if (path)
+		outputStream = std::ofstream(path);
+	
+	int step = 0;
+	double prevEst = estimate(start);
+	
+	printf("\nAccuracy (1px difference in %d - %d):\n", start, end-1);
+	for (int i = start + 1; i < end; i++) {
+		double curEst = estimate(i);
+		double diff = fabs(prevEst - curEst);
+		prevEst = curEst;
+		
+		if (step < (int)(curEst / 100) || i == end-1) {
+			step = (int)(curEst / 100);
+			printf("  %d cm: %1.2f mm\n", (int)curEst/10, diff);
+		}
+		outputStream << curEst << "\t" << diff << "\n";
+	}
+	outputStream.close();
 }

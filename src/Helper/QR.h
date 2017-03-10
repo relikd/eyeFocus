@@ -27,6 +27,23 @@ public:
 			return nullptr;
 		}
 		
+		cv::Mat solved;
+		cv::Mat internal_A = cv::Mat(equations, unknowns, CV_64FC1, A);
+		cv::Mat internal_b = cv::Mat(equations, 1, CV_64FC1, b);
+		cv::solve(internal_A, internal_b, solved, cv::DecompTypes::DECOMP_QR);
+		
+		double* outX = new double[solved.rows];
+		int i = solved.rows;
+		while (i--) outX[i] = solved.at<double>(i);
+		return outX;
+	}
+	/*
+	static double* solve_not(int equations, int unknowns, double* A, double* b) {
+		if (equations <= 0) {
+			fputs("Error: QR decomposition needs equations to solve something.\n", stderr);
+			return nullptr;
+		}
+		
 		cv::Mat R, Q;
 		cv::Mat internal_A = cv::Mat(equations, unknowns, CV_64FC1, A);
 		cv::Mat internal_b = cv::Mat(equations, 1, CV_64FC1, b);
@@ -97,6 +114,6 @@ private:
 		*R = tmp_Q * m;
 		cv::transpose(tmp_Q, *Q);
 		tmp_Q.release();
-	}
+	}*/
 };
 #endif /* QR_h */

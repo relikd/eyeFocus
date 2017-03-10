@@ -211,6 +211,7 @@ DualCam::DualCam(const char *path, const char* file) {
 			if (finishedYet) {
 				distEst.initialize(points, std::vector<int>{200, 500, 800});
 				distEst.printEquation();
+				distEst.printAccuracy(points[0], points[2], "accuracy_dist_est.csv");
 			}
 		}
 	}

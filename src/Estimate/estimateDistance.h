@@ -30,6 +30,7 @@ namespace Estimate {
 		
 		double estimate(float pplDist);
 		void printEquation(bool newline = true);
+		void printAccuracy(int start, int end, const char* path = NULL);
 		
 		static void drawOnFrame(cv::Mat &frame, double distance);
 		
