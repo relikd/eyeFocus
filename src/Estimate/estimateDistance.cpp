@@ -15,7 +15,7 @@ using namespace Estimate;
 
 
 
-void Distance::initialize(std::vector<float> pupilDistance, std::vector<int> focusDistance) {
+void Distance::initialize(std::vector<float> pupilDistance, std::vector<int> focusDistance, int maxExponent) {
 	if (pupilDistance.size() != focusDistance.size() || pupilDistance.size() == 0) {
 		fputs("Distance Estimation vector size mismatch. pupilDistance and focusDistance must have same size().\n", stderr);
 		return;
@@ -30,31 +30,36 @@ void Distance::initialize(std::vector<float> pupilDistance, std::vector<int> foc
 		fcsDist[i] = focusDistance[i];
 	}
 	
-	initialize(count, pplDist, fcsDist);
+	initialize(count, pplDist, fcsDist, maxExponent);
 	
 	delete [] pplDist;
 	delete [] fcsDist;
 }
 
-void Distance::initialize(int count, float* pupilDistance, int* focusDistance) {
+void Distance::initialize(int count, float* pupilDistance, int* focusDistance, int maxExponent) {
 	int equations = count;
-	unknowns = 0;
 	
-	int* uniqueFocusDist = new int[count];
-	for (int i = 0; i < count; i++) {
-		bool duplicate = false;
-		for (int u = 0; u < unknowns; u++) {
-			if (uniqueFocusDist[u] == focusDistance[i]) {
-				duplicate = true;
-				break;
+	if (maxExponent > 0) {
+		unknowns = maxExponent;
+	} else {
+		unknowns = 0;
+		int* uniqueFocusDist = new int[count];
+		for (int i = 0; i < count; i++) {
+			bool duplicate = false;
+			for (int u = 0; u < unknowns; u++) {
+				if (uniqueFocusDist[u] == focusDistance[i]) {
+					duplicate = true;
+					break;
+				}
+			}
+			if (!duplicate) {
+				uniqueFocusDist[unknowns] = focusDistance[i];
+				++unknowns;
 			}
 		}
-		if (!duplicate) {
-			uniqueFocusDist[unknowns] = focusDistance[i];
-			++unknowns;
-		}
+		delete [] uniqueFocusDist;
 	}
-	delete [] uniqueFocusDist;
+	
 	
 	
 	double* A = new double[unknowns * equations];
@@ -65,7 +70,7 @@ void Distance::initialize(int count, float* pupilDistance, int* focusDistance) {
 			A[i * unknowns + a] = pow(pupilDistance[i], e(a));
 		}
 		b[i] = focusDistance[i];
-		printf("%d mm => %1.1f px\n", focusDistance[i], pupilDistance[i]);
+		printf("%d mm => %1.2f px\n", focusDistance[i], pupilDistance[i]);
 	}
 	
 	delete [] _x;
@@ -88,7 +93,8 @@ inline int Distance::e(int index) {
 void Distance::drawOnFrame(cv::Mat &frame, double distance) {
 	char strEst[6];
 	snprintf(strEst, 6*sizeof(char), "%dcm", cvRound(distance/10));
-	cv::putText(frame, strEst, cv::Point(frame.cols - 220, frame.rows - 10), cv::FONT_HERSHEY_PLAIN, 5.0f, cv::Scalar(255,255,255));
+	cv::Size s = cv::getTextSize(strEst, cv::FONT_HERSHEY_PLAIN, 5.0f, 1, NULL);
+	cv::putText(frame, strEst, cv::Point(frame.cols - s.width, frame.rows - 10), cv::FONT_HERSHEY_PLAIN, 5.0f, cv::Scalar(255,255,255));
 }
 
 void Distance::printEquation(bool newline) {
@@ -97,7 +103,7 @@ void Distance::printEquation(bool newline) {
 	for (int i = 0; i < unknowns; i++) {
 		if (_x[i] >= 0 && i != 0)
 			printf("+");
-		printf("%f", _x[i]);
+		printf("%.42e", _x[i]);
 		if (e(i) > 0)
 			printf("x");
 		if (e(i) > 1)
@@ -130,7 +136,7 @@ void Distance::printAccuracy(int start, int end, const char* path) {
 		
 		if (step < (int)(curEst / 100) || i == end-1) {
 			step = (int)(curEst / 100);
-			printf("  %d cm: %1.2f mm\n", (int)curEst/10, diff);
+			printf("  %d cm: %1.2f mm\n", (int)(curEst/10), diff);
 		}
 		outputStream << curEst << "\t" << diff << "\n";
 	}

@@ -25,8 +25,8 @@ namespace Estimate {
 			delete [] _x;
 		}
 		
-		void initialize(std::vector<float> pupilDistance, std::vector<int> focusDistance);
-		void initialize(int count, float* pupilDistance, int* focusDistance);
+		void initialize(std::vector<float> pupilDistance, std::vector<int> focusDistance, int maxExponent = -1);
+		void initialize(int count, float* pupilDistance, int* focusDistance, int maxExponent = -1);
 		
 		double estimate(float pplDist);
 		void printEquation(bool newline = true);

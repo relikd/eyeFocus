@@ -84,64 +84,92 @@ void DualCam::writeStreamToDisk(int startFocusCM) {
 // |
 //  ---------------------------------------------------------------
 
-//static const int blackThreshhold = 25;
-//static const int offsetBottomPx = 107;
-//
-//void calculateDualCamEyeDistance(cv::Mat &frame, bool isLeft) {
-//	cv::Point2i pt = cv::Point2i((isLeft ? frame.cols-1 : 0), frame.rows - offsetBottomPx);
-//	while (pt.x >= 0 && pt.x < frame.cols) {
-//		printf("%d ", frame.at<uchar>(pt));
-//		frame.at<uchar>(pt) = 255;
-//		(isLeft ? pt.x-- : pt.x++);
-//	}
-//	printf("\n");
-//}
+std::vector<float> pplDistancePoints;
+std::vector<int> focalPoints;
+int currentFocusDistance = 200;
 
-std::vector<float> points;
-static const int betweenCamDistancePX = 930;//295; // 18.08mm
-
-float distanceBetweenPoints(cv::Point2f left, cv::Point2f right, int camWidth) {
+static const int betweenCamDistancePX = 930; // 36.47mm
+inline float dualCamDistanceBetweenPoints(cv::Point2f left, cv::Point2f right, int camWidth) {
 	return (camWidth - left.x) + betweenCamDistancePX + right.x;
 }
 
-bool setupFinished(cv::Mat &frame, cv::Point2f pLeft, cv::Point2f pRight) {
-#if 0
-	points.push_back(1);
-	points.push_back(1);
-	points.push_back(1);
-	return true;
+bool dualCamCalibrationFile(const char* path, bool write = false) {
+	FILE* file;
+	if (path) {
+#ifdef _WIN32
+		fopen_s(&file, path, (write?"w":"r"));
+#else
+		file = fopen(path, (write?"w":"r"));
 #endif
-	cv::String infoText;
-	switch (points.size()) {
-		case 0: infoText = "Focus on 20 cm and press spacebar"; break;
-		case 1: infoText = "Focus on 50 cm and press spacebar"; break;
-		case 2: infoText = "Focus on 80 cm and press spacebar"; break;
-		default: infoText = "Press spacebar to confirm"; break;
+		if (file) {
+			if (write) {
+				for (int i = 0; i < focalPoints.size(); i++) {
+					fprintf(file, "%d;%1.32f\n", focalPoints[i], pplDistancePoints[i]);
+				}
+			} else {
+				int d;
+				float f;
+				while (fscanf(file, "%d;%f\n", &d, &f) > 0) {
+					pplDistancePoints.push_back(f);
+					focalPoints.push_back(d);
+				}
+			}
+			fclose(file);
+			return true;
+		}
 	}
+	return false;
+}
+
+void dualCamInitEstimator(Estimate::Distance &estimator) {
+	estimator.initialize(pplDistancePoints, focalPoints);
+	estimator.printEquation();
+	int min = 99999, max = 0;
+	for (float &f : pplDistancePoints) {
+		if (min > f) min = f;
+		if (max < f) max = f;
+	}
+	if (min < 99990)
+		estimator.printAccuracy(min, max, "accuracy_dist_est.csv");
+}
+
+bool dualCamSetup(cv::Mat &frame, cv::Point2f pLeft, cv::Point2f pRight) {
+	char infoText[100];
+	snprintf(infoText, sizeof(char)*100, "Focus on %d cm (%lu)", currentFocusDistance/10, focalPoints.size());
 	cv::putText(frame, infoText, cv::Point(10, frame.rows - 10), cv::FONT_HERSHEY_PLAIN, 2.0f, cv::Scalar(255,255,255));
-	imshow("setup", frame);
+	imshow("Distance", frame);
 	
 	int key = cv::waitKey(30);
 	switch (key) {
+		case 13: // return, confirm selection
+			//cv::destroyWindow("setup");
+			return true; // user setup complete
+			
 		case 27: // escape key, undo selection
-			if (points.size() == 0)
+			if (focalPoints.size() == 0)
 				exit(EXIT_FAILURE);
-			points.pop_back();
+			focalPoints.pop_back();
+			pplDistancePoints.pop_back();
 			break;
 			
-		case ' ': // spacebar, confirm selection
-			if (points.size() == 3) {
-				cv::destroyWindow("setup");
-				return true; // user setup complete
-			}
-			points.push_back(distanceBetweenPoints(pLeft, pRight, frame.cols));
+		case ' ': // spacebar, measure point
+			pplDistancePoints.push_back( dualCamDistanceBetweenPoints(pLeft, pRight, frame.cols) );
+			focalPoints.push_back( currentFocusDistance );
+			break;
+			
+		case '9':
+//			currentFocusDistance = 6000; // inf: 6m
+//			break;
+		case '0': case '1': case '2':
+		case '3': case '4': case '5':
+		case '6': case '7': case '8':
+			currentFocusDistance = (key-48)*100;
 			break;
 	}
 	return false;
 }
 
 DualCam::DualCam(const char *path, const char* file) {
-//	FrameReader fr[2] = {FrameReader(1), FrameReader(0)}; // USB Cam 1 & 2
 	char one[300], two[300];
 	if (path == NULL && file == NULL) {
 		one[0] = '1'; one[1] = '\0'; // USB Cam 1 & 2
@@ -177,7 +205,9 @@ DualCam::DualCam(const char *path, const char* file) {
 	
 	Estimate::Distance distEst;
 	
-	bool finishedYet = false;
+	bool finishedYet = dualCamCalibrationFile("dualcam_calib.txt"); // read
+	if (finishedYet)
+		dualCamInitEstimator(distEst);
 	
 	while (true) {
 		cv::RotatedRect pupil[2];
@@ -201,17 +231,16 @@ DualCam::DualCam(const char *path, const char* file) {
 //		log.writePointPair(nullPoint, nullPoint, true);
 		
 		if (finishedYet) {
-			double est = distEst.estimate( distanceBetweenPoints(pupil[0].center, pupil[1].center, blackFrame.cols) );
+			double est = distEst.estimate( dualCamDistanceBetweenPoints(pupil[0].center, pupil[1].center, blackFrame.cols) );
 			Estimate::Distance::drawOnFrame(blackFrame, est);
 			imshow("Distance", blackFrame);
 			if( cv::waitKey(10) == 27 ) // esc key
 				exit(EXIT_SUCCESS);
 		} else {
-			finishedYet = setupFinished(blackFrame, pupil[0].center, pupil[1].center);
+			finishedYet = dualCamSetup(blackFrame, pupil[0].center, pupil[1].center);
 			if (finishedYet) {
-				distEst.initialize(points, std::vector<int>{200, 500, 800});
-				distEst.printEquation();
-				distEst.printAccuracy(points[0], points[2], "accuracy_dist_est.csv");
+				dualCamInitEstimator(distEst);
+				dualCamCalibrationFile("dualcam_calib.txt", true); // write
 			}
 		}
 	}

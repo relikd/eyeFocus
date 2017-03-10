@@ -30,10 +30,10 @@ public:
 		cv::Mat solved;
 		cv::Mat internal_A = cv::Mat(equations, unknowns, CV_64FC1, A);
 		cv::Mat internal_b = cv::Mat(equations, 1, CV_64FC1, b);
-		cv::solve(internal_A, internal_b, solved, cv::DecompTypes::DECOMP_QR);
+		cv::solve(internal_A, internal_b, solved, cv::DecompTypes::DECOMP_QR | cv::DecompTypes::DECOMP_NORMAL);
 		
-		double* outX = new double[solved.rows];
 		int i = solved.rows;
+		double* outX = new double[i];
 		while (i--) outX[i] = solved.at<double>(i);
 		return outX;
 	}
