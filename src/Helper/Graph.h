@@ -34,7 +34,7 @@ public:
 	origin(cv::Point2f(margin, size.height - margin)),
 	pxPerUnit(cv::Point2f((size.width - margin) / (float)(max.x - min.x),
 						  (size.height - margin) / (float)(max.y - min.y))),
-	img(cv::Mat::ones(size, CV_8SC1) * 255)
+	img(cv::Mat::ones(size, CV_8UC1) * 255)
 	{};
 	~Graph() { img.release(); };
 	

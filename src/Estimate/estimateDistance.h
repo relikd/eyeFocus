@@ -30,9 +30,8 @@ namespace Estimate {
 		
 		double estimate(float pplDist);
 		void printEquation(bool newline = true);
-		void printUncertainty(int start, int end, const char* path = NULL);
 		cv::Mat graphFunction(int min_x, int max_x, std::vector<cv::Point2f> measurement);
-		cv::Mat graphUncertainty(int min_x, int max_x);
+		cv::Mat graphUncertainty(int min_x, int max_x, const char* path = NULL);
 		
 		static void drawOnFrame(cv::Mat &frame, double distance);
 		

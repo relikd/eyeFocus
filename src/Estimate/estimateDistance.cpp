@@ -119,36 +119,6 @@ void Distance::printEquation(bool newline) {
 		printf("\n");
 }
 
-void Distance::printUncertainty(int start, int end, const char* path) {
-	if (end < start) {
-		int tmp = start;
-		start = end;
-		end = tmp;
-	}
-	++end;
-	
-	std::ofstream outputStream;
-	if (path)
-		outputStream = std::ofstream(path);
-	
-	int step = 0;
-	double prevEst = estimate(start);
-	
-	printf("\nAccuracy (1px difference in %d - %d):\n", start, end-1);
-	for (int i = start + 1; i < end; i++) {
-		double curEst = estimate(i);
-		double diff = fabs(prevEst - curEst);
-		prevEst = curEst;
-		
-		if (step < (int)(curEst / 100) || i == end-1) {
-			step = (int)(curEst / 100);
-			printf("  %d cm: %1.2f mm\n", (int)(curEst/10), diff);
-		}
-		outputStream << curEst << "\t" << diff << "\n";
-	}
-	outputStream.close();
-}
-
 cv::Mat Distance::graphFunction(int min_x, int max_x, std::vector<cv::Point2f> measurement) {
 	Graph plot = Graph(cv::Point2i(min_x, 0), cv::Point2i(max_x, 1050), cv::Size(640,480));
 	plot.addAxis(cv::Point2i(5, 100), cv::Point2i(1, 25), cv::Point2f(1, 1e-1));
@@ -160,16 +130,21 @@ cv::Mat Distance::graphFunction(int min_x, int max_x, std::vector<cv::Point2f> m
 	return plot.img;
 }
 
-cv::Mat Distance::graphUncertainty(int min_x, int max_x) {
+cv::Mat Distance::graphUncertainty(int min_x, int max_x, const char* path) {
+	std::ofstream outputStream;
+	if (path) outputStream = std::ofstream(path);
+	
 	Graph plot = Graph(cv::Point2i(0, 0), cv::Point2i(1050, 65));
 	plot.addAxis(cv::Point2i(100, 10), cv::Point2i(25, 5), cv::Point2f(1e-1, 1));
-	plot.addFunction(0.1, [this](float &x){
+	plot.addFunction(0.1, [this,&outputStream](float &x){
 		double thisEst = estimate(x);
 		double diff = fabs(thisEst - estimate(x+1));
 		x = thisEst;
+		outputStream << x << "\t" << diff << "\n";
 		return diff;
 	}, min_x, max_x);
 	plot.addAxisLabels("cm", "mm");
+	outputStream.close();
 	return plot.img;
 }
 

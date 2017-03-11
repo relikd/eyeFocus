@@ -121,9 +121,19 @@ bool dualCamCalibrationFile(const char* path, bool write = false) {
 	return false;
 }
 
-void dualCamInitEstimator(Estimate::Distance &estimator) {
+inline void dualCamInitEstimator(Estimate::Distance &estimator) {
 	estimator.initialize(pplDistancePoints, focalPoints);
 	estimator.printEquation();
+}
+
+inline void dualCamWritePlot(int winx, cv::String window, cv::Mat plot, cv::String filename = "") {
+	cv::namedWindow(window, CV_WINDOW_NORMAL);
+	cv::moveWindow(window, winx, 400);
+	imshow(window, plot);
+	if (!filename.empty()) imwrite(filename, plot);
+}
+
+void dualCamGraphOutput(Estimate::Distance &estimator) {
 	int min = 99999, max = 0;
 	int count = focalPoints.size();
 	std::vector<cv::Point2f> measured;
@@ -134,13 +144,13 @@ void dualCamInitEstimator(Estimate::Distance &estimator) {
 		measured.push_back(cv::Point2f(pplDist, focalPoints[i]));
 	}
 	if (count > 0) {
-		estimator.printUncertainty(min, max, "accuracy_dist_est.csv");
 		cv::Mat plotFx = estimator.graphFunction(min-10, max+10, measured);
-		cv::Mat plotErr = estimator.graphUncertainty(min-10, max+10);
-//		imwrite("graph_estimation_function.jpg", plotFx);
-//		imwrite("graph_uncertainty.jpg", plotErr);
-		imshow("Graph: Distance estimation f(x)", plotFx);
-		imshow("Graph: Uncertainty for 1px", plotErr);
+		cv::Mat plotErr = estimator.graphUncertainty(min-10, max+10, "graph_uncertainty.csv");
+		dualCamWritePlot(50, "Graph: Distance estimation f(x)", plotFx, "graph_estimation_function.jpg");
+		dualCamWritePlot(700, "Graph: Uncertainty for 1px", plotErr, "graph_uncertainty.jpg");
+		cv::waitKey(0);
+		cv::destroyWindow("Graph: Distance estimation f(x)");
+		cv::destroyWindow("Graph: Uncertainty for 1px");
 	}
 }
 
@@ -245,8 +255,9 @@ DualCam::DualCam(const char *path, const char* file) {
 			double est = distEst.estimate( dualCamDistanceBetweenPoints(pupil[0].center, pupil[1].center, blackFrame.cols) );
 			Estimate::Distance::drawOnFrame(blackFrame, est);
 			imshow("Distance", blackFrame);
-			if( cv::waitKey(10) == 27 ) // esc key
-				exit(EXIT_SUCCESS);
+			int key = cv::waitKey(10);
+			if (key == 27)  exit(EXIT_SUCCESS); // esc key
+			if (key == 'g') dualCamGraphOutput(distEst);
 		} else {
 			finishedYet = dualCamSetup(blackFrame, pupil[0].center, pupil[1].center);
 			if (finishedYet) {
