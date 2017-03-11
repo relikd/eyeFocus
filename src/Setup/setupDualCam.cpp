@@ -125,12 +125,23 @@ void dualCamInitEstimator(Estimate::Distance &estimator) {
 	estimator.initialize(pplDistancePoints, focalPoints);
 	estimator.printEquation();
 	int min = 99999, max = 0;
-	for (float &f : pplDistancePoints) {
-		if (min > f) min = f;
-		if (max < f) max = f;
+	int count = focalPoints.size();
+	std::vector<cv::Point2f> measured;
+	for (int i = 0; i < count; i++) {
+		float pplDist = pplDistancePoints[i];
+		if (min > pplDist) min = pplDist;
+		if (max < pplDist) max = pplDist;
+		measured.push_back(cv::Point2f(pplDist, focalPoints[i]));
 	}
-	if (min < 99990)
-		estimator.printAccuracy(min, max, "accuracy_dist_est.csv");
+	if (count > 0) {
+		estimator.printUncertainty(min, max, "accuracy_dist_est.csv");
+		cv::Mat plotFx = estimator.graphFunction(min-10, max+10, measured);
+		cv::Mat plotErr = estimator.graphUncertainty(min-10, max+10);
+//		imwrite("graph_estimation_function.jpg", plotFx);
+//		imwrite("graph_uncertainty.jpg", plotErr);
+		imshow("Graph: Distance estimation f(x)", plotFx);
+		imshow("Graph: Uncertainty for 1px", plotErr);
+	}
 }
 
 bool dualCamSetup(cv::Mat &frame, cv::Point2f pLeft, cv::Point2f pRight) {

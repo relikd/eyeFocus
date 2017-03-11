@@ -10,10 +10,9 @@
 #include <cmath>
 #include <fstream>
 #include "../Helper/QR.h"
+#include "../Helper/Graph.h"
 
 using namespace Estimate;
-
-
 
 void Distance::initialize(std::vector<float> pupilDistance, std::vector<int> focusDistance, int maxExponent) {
 	if (pupilDistance.size() != focusDistance.size() || pupilDistance.size() == 0) {
@@ -90,9 +89,16 @@ inline int Distance::e(int index) {
 	return unknowns - index - 1; // Ax^2 + Bx + C  // (without -1: Ax^3 + Bx^2 + Cx )
 }
 
+
+//  ---------------------------------------------------------------
+// |
+// |  Printing and Screen Drawing
+// |
+//  ---------------------------------------------------------------
+
 void Distance::drawOnFrame(cv::Mat &frame, double distance) {
-	char strEst[6];
-	snprintf(strEst, 6*sizeof(char), "%dcm", cvRound(distance/10));
+	char strEst[12];
+	snprintf(strEst, 12*sizeof(char), "%dcm", cvRound(distance/10));
 	cv::Size s = cv::getTextSize(strEst, cv::FONT_HERSHEY_PLAIN, 5.0f, 1, NULL);
 	cv::putText(frame, strEst, cv::Point(frame.cols - s.width, frame.rows - 10), cv::FONT_HERSHEY_PLAIN, 5.0f, cv::Scalar(255,255,255));
 }
@@ -113,7 +119,7 @@ void Distance::printEquation(bool newline) {
 		printf("\n");
 }
 
-void Distance::printAccuracy(int start, int end, const char* path) {
+void Distance::printUncertainty(int start, int end, const char* path) {
 	if (end < start) {
 		int tmp = start;
 		start = end;
@@ -142,3 +148,28 @@ void Distance::printAccuracy(int start, int end, const char* path) {
 	}
 	outputStream.close();
 }
+
+cv::Mat Distance::graphFunction(int min_x, int max_x, std::vector<cv::Point2f> measurement) {
+	Graph plot = Graph(cv::Point2i(min_x, 0), cv::Point2i(max_x, 1050), cv::Size(640,480));
+	plot.addAxis(cv::Point2i(5, 100), cv::Point2i(1, 25), cv::Point2f(1, 1e-1));
+	plot.addFunction(0.1f, [this](float &x){
+		return estimate(x);
+	});
+	plot.addMarkers(measurement);
+	plot.addAxisLabels("px", "cm");
+	return plot.img;
+}
+
+cv::Mat Distance::graphUncertainty(int min_x, int max_x) {
+	Graph plot = Graph(cv::Point2i(0, 0), cv::Point2i(1050, 65));
+	plot.addAxis(cv::Point2i(100, 10), cv::Point2i(25, 5), cv::Point2f(1e-1, 1));
+	plot.addFunction(0.1, [this](float &x){
+		double thisEst = estimate(x);
+		double diff = fabs(thisEst - estimate(x+1));
+		x = thisEst;
+		return diff;
+	}, min_x, max_x);
+	plot.addAxisLabels("cm", "mm");
+	return plot.img;
+}
+

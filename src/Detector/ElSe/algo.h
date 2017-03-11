@@ -65,16 +65,6 @@ static cv::RotatedRect run(cv::Mat input_img){
 
 	filter_edges(&detected_edges, start_x, end_x, start_y, end_y);
 	
-#if kEnableImageWindow
-	static bool tmpp;
-	if (tmpp)
-		imshow("test1", detected_edges);
-	else
-		imshow("test2", detected_edges);
-	tmpp = !tmpp;
-#endif
-
-
 	ellipse=find_best_edge(&pic, &detected_edges, &magni, start_x, end_x, start_y, end_y,mean_dist, inner_color_range);
 
 
