@@ -19,16 +19,6 @@ void startNormalTracking(FrameReader &fr);
 void startSingleEyeTracking(FrameReader &fr);
 
 int main( int argc, const char** argv ) {
-	if (argc != 2) {
-		fputs("Missing argument value. Pass either [path to video file] or [camera index].\n\n", stderr);
-		return EXIT_SUCCESS;
-	}
-	
-#if 0
-	Setup::DualCam::writeStreamToDisk(80);
-	return EXIT_SUCCESS;
-#endif
-	
 #if kFullsizeDualCamMode
 	Setup::DualCam(NULL, NULL);
 //	for (int i=10; i<=80; i+=10) {
@@ -36,6 +26,17 @@ int main( int argc, const char** argv ) {
 //		snprintf(file, 20*sizeof(char), "%dcm.MP4", i);
 //		Setup::DualCam("../../testVideos/series10/", file);
 //	}
+	return EXIT_SUCCESS;
+#endif
+	
+	
+	if (argc != 2) {
+		fputs("Missing argument value. Pass either [path to video file] or [camera index].\n\n", stderr);
+		return EXIT_SUCCESS;
+	}
+	
+#if 0
+	Setup::DualCam::writeStreamToDisk(80);
 	return EXIT_SUCCESS;
 #endif
 	

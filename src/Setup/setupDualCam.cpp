@@ -154,6 +154,12 @@ void dualCamGraphOutput(Estimate::Distance &estimator) {
 	}
 }
 
+bool dualCamClearMeasurement() {
+	focalPoints.clear();
+	pplDistancePoints.clear();
+	return false; // for 'finishedYet' variable
+}
+
 bool dualCamSetup(cv::Mat &frame, cv::Point2f pLeft, cv::Point2f pRight) {
 	char infoText[100];
 	snprintf(infoText, sizeof(char)*100, "Focus on %d cm (%lu)", currentFocusDistance/10, focalPoints.size());
@@ -171,6 +177,10 @@ bool dualCamSetup(cv::Mat &frame, cv::Point2f pLeft, cv::Point2f pRight) {
 				exit(EXIT_FAILURE);
 			focalPoints.pop_back();
 			pplDistancePoints.pop_back();
+			break;
+			
+		case 'r':
+			dualCamClearMeasurement();
 			break;
 			
 		case ' ': // spacebar, measure point
@@ -258,6 +268,7 @@ DualCam::DualCam(const char *path, const char* file) {
 			int key = cv::waitKey(10);
 			if (key == 27)  exit(EXIT_SUCCESS); // esc key
 			if (key == 'g') dualCamGraphOutput(distEst);
+			if (key == 'r') finishedYet = dualCamClearMeasurement();
 		} else {
 			finishedYet = dualCamSetup(blackFrame, pupil[0].center, pupil[1].center);
 			if (finishedYet) {
