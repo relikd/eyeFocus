@@ -66,7 +66,7 @@ void Distance::initialize(int count, float* pupilDistance, int* focusDistance, i
 	
 	for (int i = 0; i < count; i++) {
 		for (int a = 0; a < unknowns; a++) {
-			A[i * unknowns + a] = pow(pupilDistance[i], e(a));
+			A[i * unknowns + a] = pow(pupilDistance[i], e(a));// * (pupilDistance[i] - 1520); // fix zero point 
 		}
 		b[i] = focusDistance[i];
 		printf("%d mm => %1.2f px\n", focusDistance[i], pupilDistance[i]);
@@ -82,7 +82,7 @@ double Distance::estimate(float pplDist) {
 	double sum = 0;
 	for (int i = 0; i < unknowns; i++)
 		sum += _x[i] * pow(pplDist, e(i));
-	return sum;
+	return sum;// * (pplDist - 1520);
 }
 
 inline int Distance::e(int index) {

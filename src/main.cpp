@@ -19,6 +19,11 @@ void startNormalTracking(FrameReader &fr);
 void startSingleEyeTracking(FrameReader &fr);
 
 int main( int argc, const char** argv ) {
+#if 0
+	Setup::DualCam::writeStreamToDisk(80);
+	return EXIT_SUCCESS;
+#endif
+	
 #if kFullsizeDualCamMode
 	Setup::DualCam(NULL, NULL);
 //	for (int i=10; i<=80; i+=10) {
@@ -34,11 +39,6 @@ int main( int argc, const char** argv ) {
 		fputs("Missing argument value. Pass either [path to video file] or [camera index].\n\n", stderr);
 		return EXIT_SUCCESS;
 	}
-	
-#if 0
-	Setup::DualCam::writeStreamToDisk(80);
-	return EXIT_SUCCESS;
-#endif
 	
 	// create Video Capture from calling argument
 	FrameReader fr = FrameReader::initWithArgv(argv[1]);

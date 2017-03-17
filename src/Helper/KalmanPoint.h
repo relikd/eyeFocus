@@ -19,6 +19,9 @@ public:
 		filter.transitionMatrix = (cv::Mat_<float>(4, 4) << 1,0,1,0,   0,1,0,1,  0,0,1,0,  0,0,0,1);
 		//filter.transitionMatrix = (cv::Mat_<float>(2, 2) << 1,0, 0,1);
 		
+//		filter.measurementNoiseCov = (cv::Mat_<float>(2, 2) << 1.2,0, 0,1.2);
+//		filter.processNoiseCov = (cv::Mat_<float>(2, 2) << 0.353688,0, 0,0.751980);
+		
 		setIdentity(filter.measurementMatrix);
 		setIdentity(filter.processNoiseCov, cv::Scalar::all(processNoise));
 		setIdentity(filter.measurementNoiseCov, cv::Scalar::all(measurementNoise)); // error in measurement
