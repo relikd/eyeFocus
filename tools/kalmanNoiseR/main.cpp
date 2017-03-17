@@ -94,6 +94,7 @@ int main( int argc, const char** argv ) {
 		fputs("Missing argument value. Path to report file[s] expected.\n\n", stderr);
 		return EXIT_SUCCESS;
 	}
+	std::vector<float> frameDiff[4];
 	
 	float totalVar[4] = {0,0,0,0};
 	float totalCov = 0;
@@ -130,6 +131,7 @@ int main( int argc, const char** argv ) {
 				totalVar[u] += meanDiff * meanDiff;
 				
 				float tmpDiff = fabs(pre[u] - data[c * NumOfCols + u]);
+				frameDiff[u].push_back(tmpDiff);
 				if (tmpDiff > maxdiff[u]) {
 					maxdiff[u] = tmpDiff;
 				}
@@ -149,6 +151,22 @@ int main( int argc, const char** argv ) {
 	
 	printf("   [ Combined ]\n");
 	printVarCovMat(totalVar, totalCov, totalCount-1);
+	
+	
+	// 99%-Quantil
+	FILE* fDiff = openFile("./frameDifference.txt", true);
+	if (fDiff) {
+		fprintf(fDiff, "   Xl   ,   Yl   ,   Xr   ,   Yr   \n");
+		size_t sampleCount = frameDiff[0].size();
+		for (int u = 0; u < 4; u++)
+			std::sort(frameDiff[u].begin(), frameDiff[u].end());
+		for (size_t i = 0; i < sampleCount; i++)
+			fprintf(fDiff, "%1.6f,%1.6f,%1.6f,%1.6f\n", frameDiff[0][i],frameDiff[1][i],frameDiff[2][i],frameDiff[3][i]);
+		printf("Samples: %lu\n", sampleCount);
+		size_t p99 = sampleCount * 0.99; // since index it will be always +1
+		printf("99%%-Quantil: %1.6f , %1.6f , %1.6f , %1.6f\n", frameDiff[0][p99],frameDiff[1][p99],frameDiff[2][p99],frameDiff[3][p99]);
+		fclose(fDiff);
+	}
 	
 	printf("\n");
 	return EXIT_SUCCESS;

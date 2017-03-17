@@ -241,6 +241,7 @@ DualCam::DualCam(const char *path, const char* file) {
 		dualCamInitEstimator(distEst);
 	
 	while (true) {
+		bool bothCamsEmpty = true;
 		cv::RotatedRect pupil[2];
 		// Process both cams
 		for (int i = 0; i < 2; i++) {
@@ -252,14 +253,16 @@ DualCam::DualCam(const char *path, const char* file) {
 				circle(img, pupil[i].center, 3, 1234);
 #endif
 				imshow((i==0?"Cam 0":"Cam 1"), img);
+				bothCamsEmpty = false;
 			} else {
 				continue;
 			}
 		}
+		if (bothCamsEmpty) return;
 		
 		cv::Mat blackFrame = cv::Mat::zeros(fr[0].frame.size(), CV_8UC1);
-//		log.writePointPair(pupil[0].center, pupil[1].center + cv::Point2f(blackFrame.cols+betweenCamDistancePX,0), false);
-//		log.writePointPair(nullPoint, nullPoint, true);
+		log.writePointPair(pupil[0].center, pupil[1].center + cv::Point2f(blackFrame.cols+betweenCamDistancePX,0), false);
+		log.writePointPair(nullPoint, nullPoint, true);
 		
 		if (finishedYet) {
 			double est = distEst.estimate( dualCamDistanceBetweenPoints(pupil[0].center, pupil[1].center, blackFrame.cols) );

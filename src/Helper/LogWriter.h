@@ -31,7 +31,7 @@ public:
 		if (isCorner) printf(" | ");
 		printf("%s: ([%1.1f,%1.1f],[%1.1f,%1.1f], dist: %1.1f)", (isCorner?"corner":"pupil"), a.x, a.y, b.x, b.y, dist);
 		if (isCorner) printf("\n");
-		if (file) fprintf(file, "%1.1f,%1.1f,%1.1f,%1.1f,%1.2f%c", a.x, a.y, b.x, b.y, dist, (isCorner?'\n':','));
+		if (file) fprintf(file, "%1.4f,%1.4f,%1.4f,%1.4f,%1.2f%c", a.x, a.y, b.x, b.y, dist, (isCorner?'\n':','));
 	}
 	
 	~LogWriter() {

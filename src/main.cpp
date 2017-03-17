@@ -29,7 +29,7 @@ int main( int argc, const char** argv ) {
 //	for (int i=10; i<=80; i+=10) {
 //		char file[20];
 //		snprintf(file, 20*sizeof(char), "%dcm.MP4", i);
-//		Setup::DualCam("../../testVideos/series10/", file);
+//		Setup::DualCam("../../testVideos/series14/", file);
 //	}
 	return EXIT_SUCCESS;
 #endif
