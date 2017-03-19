@@ -94,7 +94,17 @@ int main( int argc, const char** argv ) {
 		fputs("Missing argument value. Path to report file[s] expected.\n\n", stderr);
 		return EXIT_SUCCESS;
 	}
+	bool writeFileOutput = false;
+	if (strcmp(argv[1], "-f") == 0) {
+		if (argc < 3) {
+			fputs("Missing argument value. Path to report file[s] expected.\n\n", stderr);
+			return EXIT_SUCCESS;
+		}
+		writeFileOutput = true;
+	}
+	
 	std::vector<float> frameDiff[4];
+	std::vector<float> meanDiffVec[4];
 	
 	float totalVar[4] = {0,0,0,0};
 	float totalCov = 0;
@@ -126,7 +136,8 @@ int main( int argc, const char** argv ) {
 		while (c--) {
 			// calc variance and covariance
 			for (int u = 0; u < 4; u++) {
-				float meanDiff = (data[c * NumOfCols + u] - local.avg[u]);
+				float meanDiff = fabs(data[c * NumOfCols + u] - local.avg[u]);
+				meanDiffVec[u].push_back(meanDiff);
 				localVar[u] += meanDiff * meanDiff;
 				totalVar[u] += meanDiff * meanDiff;
 				
@@ -154,18 +165,29 @@ int main( int argc, const char** argv ) {
 	
 	
 	// 99%-Quantil
-	FILE* fDiff = openFile("./frameDifference.txt", true);
-	if (fDiff) {
-		fprintf(fDiff, "   Xl   ,   Yl   ,   Xr   ,   Yr   \n");
-		size_t sampleCount = frameDiff[0].size();
-		for (int u = 0; u < 4; u++)
-			std::sort(frameDiff[u].begin(), frameDiff[u].end());
-		for (size_t i = 0; i < sampleCount; i++)
-			fprintf(fDiff, "%1.6f,%1.6f,%1.6f,%1.6f\n", frameDiff[0][i],frameDiff[1][i],frameDiff[2][i],frameDiff[3][i]);
-		printf("Samples: %lu\n", sampleCount);
-		size_t p99 = sampleCount * 0.99; // since index it will be always +1
-		printf("99%%-Quantil: %1.6f , %1.6f , %1.6f , %1.6f\n", frameDiff[0][p99],frameDiff[1][p99],frameDiff[2][p99],frameDiff[3][p99]);
-		fclose(fDiff);
+	size_t sampleCount = frameDiff[0].size();
+	for (int u = 0; u < 4; u++) {
+		std::sort(frameDiff[u].begin(), frameDiff[u].end());
+		std::sort(meanDiffVec[u].begin(), meanDiffVec[u].end());
+	}
+	size_t p99 = sampleCount * 0.99; // since index it will be always +1
+	printf("Samples: %lu\n", sampleCount);
+	printf("Frame Difference 99%%-Quantil: %1.6f , %1.6f , %1.6f , %1.6f\n", frameDiff[0][p99],frameDiff[1][p99],frameDiff[2][p99],frameDiff[3][p99]);
+	printf(" Mean Difference 99%%-Quantil: %1.6f , %1.6f , %1.6f , %1.6f\n", meanDiffVec[0][p99],meanDiffVec[1][p99],meanDiffVec[2][p99],meanDiffVec[3][p99]);
+	// file output
+	if (writeFileOutput) {
+		FILE* fDiff = openFile("./frameDifference.txt", true);
+		FILE* mDiff = openFile("./meanDifference.txt", true);
+		if (fDiff && mDiff) {
+			fprintf(fDiff, "   Xl   ,   Yl   ,   Xr   ,   Yr   \n");
+			fprintf(mDiff, "   Xl   ,   Yl   ,   Xr   ,   Yr   \n");
+			for (size_t i = 0; i < sampleCount; i++) {
+				fprintf(fDiff, "%1.6f,%1.6f,%1.6f,%1.6f\n", frameDiff[0][i],frameDiff[1][i],frameDiff[2][i],frameDiff[3][i]);
+				fprintf(mDiff, "%1.6f,%1.6f,%1.6f,%1.6f\n", meanDiffVec[0][i],meanDiffVec[1][i],meanDiffVec[2][i],meanDiffVec[3][i]);
+			}
+			fclose(fDiff);
+			fclose(mDiff);
+		}
 	}
 	
 	printf("\n");

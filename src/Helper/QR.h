@@ -37,8 +37,8 @@ public:
 		while (i--) outX[i] = solved.at<double>(i);
 		return outX;
 	}
-	/*
-	static double* solve_not(int equations, int unknowns, double* A, double* b) {
+	
+	static double* solve_own(int equations, int unknowns, double* A, double* b) {
 		if (equations <= 0) {
 			fputs("Error: QR decomposition needs equations to solve something.\n", stderr);
 			return nullptr;
@@ -92,19 +92,18 @@ private:
 			z = matrix_minor(z, k);
 			cv::Mat x = z.col(k);
 			double a = cv::norm(x);
-			if (m.at<double>(k, k) > 0)
+			if (z.at<double>(k, k) < 0)
 				a = -a;
 			
-			cv::Mat e = cv::Mat::zeros(m.rows, 1, CV_64FC1);
-			e.at<double>(k) = 1;
+			cv::Mat v = cv::Mat::zeros(m.rows, 1, CV_64FC1);
+			v.at<double>(k) = 1;
 			
-			e = x + e * a;
-			e = e / cv::norm(e);
+			v = x + v * a;
 			
-			cv::Mat eT;
-			cv::transpose(e, eT);
+			cv::Mat vT;
+			cv::transpose(v, vT);
 			
-			cv::Mat g = I + (e * eT) * -2;
+			cv::Mat g = I - 2 * (v * vT) / (vT * v);
 			tmp_Q = g * tmp_Q;
 			z = g * z;
 		}
@@ -114,6 +113,6 @@ private:
 		*R = tmp_Q * m;
 		cv::transpose(tmp_Q, *Q);
 		tmp_Q.release();
-	}*/
+	}
 };
 #endif /* QR_h */

@@ -73,7 +73,7 @@ void Distance::initialize(int count, float* pupilDistance, int* focusDistance, i
 	}
 	
 	delete [] _x;
-	_x = QR::solve(equations, unknowns, A, b);
+	_x = QR::solve_own(equations, unknowns, A, b);
 	delete [] A;
 	delete [] b;
 }
