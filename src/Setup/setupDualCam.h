@@ -15,8 +15,6 @@ namespace Setup {
 	class DualCam {
 	public:
 		DualCam(const char *path, const char* file);
-		
-		static void writeStreamToDisk(int startFocusCM = 80); // counting downwards in 10cm steps
 	};
 }
 

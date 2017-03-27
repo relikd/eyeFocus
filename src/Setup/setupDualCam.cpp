@@ -7,82 +7,14 @@
 //
 
 #include "setupDualCam.h"
-#include <thread>
 #include "../Detector/FindPupil.h"
 #include "../Helper/FrameReader.h"
 #include "../Helper/LogWriter.h"
+#include "../Helper/FileIO.h"
 #include "../constants.h"
 #include "../Estimate/estimateDistance.h"
 
 using namespace Setup;
-
-static int currentFocusLevel = 5;
-
-//  ---------------------------------------------------------------
-// |
-// |  Save frames to disk
-// |
-//  ---------------------------------------------------------------
-
-void writeCameraStreamToDisk(int cam) {
-	cv::VideoCapture vc(cam);
-	vc.set(CV_CAP_PROP_FRAME_WIDTH, 640);
-	vc.set(CV_CAP_PROP_FRAME_HEIGHT, 480);
-	vc.set(CV_CAP_PROP_FPS, 30);
-	
-	cv::Mat img;
-	size_t f = 0;
-	while (++f) {
-		if (currentFocusLevel % 10 == 5) { // skip recording and reset counter
-			f = 0;
-			continue;
-		}
-		vc.read(img);
-		char buffer[200];
-		snprintf(buffer, 200*sizeof(char), "%d/%d/frame_%lu.jpg", cam, currentFocusLevel, f);
-		// folder must exist, otherwise no output
-		imwrite(buffer, img);
-	}
-}
-
-void DualCam::writeStreamToDisk(int startFocusCM) {
-	currentFocusLevel = startFocusCM + 5; // start with inactive phase
-	
-	bool bothInSync = false;
-	std::thread a([&bothInSync]{
-		while (!bothInSync) { /* nothing */ }
-		writeCameraStreamToDisk(0);
-	});
-	std::thread b([&bothInSync]{
-		while (!bothInSync) { /* nothing */ }
-		writeCameraStreamToDisk(1);
-	});
-	printf("running..\n");
-	bothInSync = true;
-	
-	cv::String window = "Press space to move 5cm nearer (ESC abort)";
-	cv::namedWindow(window, CV_WINDOW_NORMAL);
-	cv::moveWindow(window, 150, 100);
-	imshow(window, cv::Mat::zeros(480, 640, CV_8UC1));
-	
-	while (true) {
-		int key = cv::waitKey(100);
-		if (key == 27) {
-			exit(EXIT_SUCCESS);
-		} else if (key == ' ') {
-			currentFocusLevel -= 5; // each 5cm step is inactive phase
-			printf("Level: %d\n", currentFocusLevel);
-		}
-	}
-	a.join();
-	b.join();
-}
-
-//  ---------------------------------------------------------------
-// |
-// |  Eye Tracking
-// |
-//  ---------------------------------------------------------------
 
 std::vector<float> pplDistancePoints;
 std::vector<int> focalPoints;
@@ -94,13 +26,8 @@ inline float dualCamDistanceBetweenPoints(cv::Point2f left, cv::Point2f right, i
 }
 
 bool dualCamCalibrationFile(const char* path, bool write = false) {
-	FILE* file;
 	if (path) {
-#ifdef _WIN32
-		fopen_s(&file, path, (write?"w":"r"));
-#else
-		file = fopen(path, (write?"w":"r"));
-#endif
+		FILE* file = FileIO::openFile(path, write);
 		if (file) {
 			if (write) {
 				for (int i = 0; i < focalPoints.size(); i++) {
@@ -161,9 +88,8 @@ bool dualCamClearMeasurement() {
 }
 
 bool dualCamSetup(cv::Mat &frame, cv::Point2f pLeft, cv::Point2f pRight) {
-	char infoText[100];
-	snprintf(infoText, sizeof(char)*100, "Focus on %d cm (%lu)", currentFocusDistance/10, focalPoints.size());
-	cv::putText(frame, infoText, cv::Point(10, frame.rows - 10), cv::FONT_HERSHEY_PLAIN, 2.0f, cv::Scalar(255,255,255));
+	cv::putText(frame, FileIO::str("Focus on %d cm (%lu)", currentFocusDistance/10, focalPoints.size()),
+				cv::Point(10, frame.rows - 10), cv::FONT_HERSHEY_PLAIN, 2.0f, cv::Scalar(255,255,255));
 	imshow("Distance", frame);
 	
 	int key = cv::waitKey(30);
@@ -219,10 +145,8 @@ DualCam::DualCam(const char *path, const char* file) {
 	cv::Rect2i crop = cv::Rect2i(0, 0, fr[0].frame.cols, fr[0].frame.rows);
 	crop = cv::Rect2i(crop.width/6, crop.height/10, crop.width/1.5, crop.height/1.5);
 	
-	char pupilPosLogFile[1024];
-	snprintf(pupilPosLogFile, 1024*sizeof(char), "%s/%s.pupilpos.csv", path, file);
-	LogWriter log( pupilPosLogFile, "pLx,pLy,pRx,pRy,PupilDistance,cLx,cLy,cRx,cRy,CornerDistance\n" );
-	
+	LogWriter log( FileIO::str("%s/%s.pupilpos.csv", path, file).c_str(),
+				  "pLx,pLy,pRx,pRy,PupilDistance,cLx,cLy,cRx,cRy,CornerDistance\n" );
 	
 #if kEnableImageWindow
 	cv::namedWindow("Distance", CV_WINDOW_NORMAL);

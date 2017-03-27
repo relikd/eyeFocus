@@ -9,6 +9,7 @@
 #include "Estimate/estimateDistance.h"
 #include "Helper/FrameReader.h"
 #include "Helper/LogWriter.h"
+#include "Setup/captureVideo.h"
 
 #if !kCameraIsHeadmounted
 //-- Note, either copy these two files from opencv/d1ata/haarscascades to your current folder, or change these locations
@@ -18,7 +19,13 @@ static Detector::Face faceDetector = Detector::Face("res/haarcascade_frontalface
 void startNormalTracking(FrameReader &fr);
 void startSingleEyeTracking(FrameReader &fr);
 
+
+
 int main( int argc, const char** argv ) {
+	
+	CaptureVideo::singleCam(0, 80);
+	return EXIT_SUCCESS;
+	
 #if 0
 	Setup::DualCam::writeStreamToDisk(80);
 	return EXIT_SUCCESS;
