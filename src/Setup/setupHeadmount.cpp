@@ -129,13 +129,14 @@ Headmount::Headmount(FrameReader &fr, const char* savePath)
 	if (userPoints.size() == NS_Headmount::points_needed)
 		goto return_eye_box;
 	
-	
 	cv::namedWindow(window_setup_headmount, CV_WINDOW_NORMAL);
 	cv::moveWindow(window_setup_headmount, 400, 100);
-	
 	setMouseCallback(window_setup_headmount, NS_Headmount::mouseHandler, &userPoints);
 	
-	while (fr.readNext()) {
+	while (true) {
+		if (!fr.readNext())
+			continue;
+		
 		NS_Headmount::drawInstructionsForSelection(fr.frame, userPoints);
 		imshow(window_setup_headmount, fr.frame);
 		

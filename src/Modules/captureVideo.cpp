@@ -50,13 +50,13 @@ void CaptureVideo::waitForInput() {
 	
 	printf("Status: ready. Press spacebar to move 5 cm closer.\n");
 	while (true) {
-		int key = cv::waitKey(10);
-		if (key == 27) { // ESC
-			currentFocusLevel = -1;
-			return;
-		} else if (key == ' ') {
-			currentFocusLevel -= 5; // each 5cm step is inactive phase
-			printf("Level: %d\n", currentFocusLevel);
+		switch (cv::waitKey(10)) {
+			case 27: // ESC
+				currentFocusLevel = -1;
+				return;
+			case ' ':
+				currentFocusLevel -= 5; // each 5cm step is inactive phase
+				printf("Level: %d\n", currentFocusLevel);
 		}
 	}
 }
@@ -71,14 +71,12 @@ void CaptureVideo::writeCameraStreamToDisk(int cam, const char* subfolder) {
 	
 	cv::Mat img;
 	size_t f = 0;
-	while (++f)
+	while (++f && currentFocusLevel != -1)
 	{
 		if (currentFocusLevel % 10 == 5) { // skip recording and reset counter
 			f = 0;
 			directoryCreated = false;
 			continue;
-		} else if (currentFocusLevel == -1) {
-			return;
 		}
 		
 		if (!directoryCreated) {

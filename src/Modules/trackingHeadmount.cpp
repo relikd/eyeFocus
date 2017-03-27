@@ -43,7 +43,10 @@ void Headmount::start(FrameReader &fr, bool findFace) {
 	Detector::EyeCorner cornerDetector[2]; cornerDetector[1].flipKernelToRightCorner();
 //	Estimate::Distance distEst("estimate.cfg");
 	
-	while ( fr.readNext() ) {
+	while (true) {
+		if (!fr.readNext())
+			continue;
+		
 		cv::Mat img = fr.frame;
 		
 		if (findFace) {
@@ -76,7 +79,7 @@ void Headmount::start(FrameReader &fr, bool findFace) {
 		imshow(fr.filePath, img);
 		
 		if( cv::waitKey(10) == 27 ) // esc key
-			exit(EXIT_SUCCESS);
+			return;
 #endif
 	}
 }
