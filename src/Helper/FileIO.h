@@ -54,17 +54,20 @@ public:
 	//  ---------------------------------------------------------------
 	
 	static FILE* openFile ( const char * path, bool write = false ) {
-		FILE* file;
+		if (path) {
+			FILE* file;
 #ifdef _WIN32
-		fopen_s(&file, path, (write?"w":"r"));
+			fopen_s(&file, path, (write?"w":"r"));
 #else
-		file = fopen(path, (write?"w":"r"));
+			file = fopen(path, (write?"w":"r"));
 #endif
-		return file;
+			return file;
+		}
+		return NULL;
 	}
 	
 	static std::string str ( const char * format, ... ) {
-		char buffer[4096];
+		char buffer[4095];
 		va_list args;
 		va_start (args, format);
 		vsprintf (buffer, format, args);

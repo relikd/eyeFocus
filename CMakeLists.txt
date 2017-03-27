@@ -8,11 +8,13 @@ file( GLOB_RECURSE SRC_ROOT src/* *.(cpp|h|hpp) )
 file( GLOB SRC_DETECTOR src/Detector/* *.(cpp|h|hpp) )
 file( GLOB SRC_ESTIMATE src/Estimate/* )
 file( GLOB SRC_HELPER src/Helper/* )
+file( GLOB SRC_MODULES src/Modules/* )
 file( GLOB SRC_SETUP src/Setup/* )
 source_group("" FILES ${SRC_ROOT})
 source_group("Detector" FILES ${SRC_DETECTOR})
 source_group("Estimate" FILES ${SRC_ESTIMATE})
 source_group("Helper" FILES ${SRC_HELPER})
+source_group("Modules" FILES ${SRC_MODULES})
 source_group("Setup" FILES ${SRC_SETUP})
 
 # Grouping - level Detector

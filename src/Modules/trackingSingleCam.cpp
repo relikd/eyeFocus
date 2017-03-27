@@ -1,17 +1,44 @@
 //
-//  setupSingleEye.cpp
+//  trackingSingleCam.h
 //  eyeFocus
 //
-//  Created by Oleg Geier on 03/02/17.
+//  Created by Oleg Geier on 27/03/17.
 //
 //
 
-#include "setupSingleEye.h"
-#include <opencv2/highgui/highgui.hpp>
+#include "trackingSingleCam.h"
 
-using namespace Setup;
+#include "../Estimate/estimateDistance.h"
 
-namespace NS_SingleEye {
+using namespace Tracking;
+
+void SingleCam::start(FrameReader &fr) {
+	FindKalmanPupil tracker;
+	// Single Eye Calibration
+	init(fr, &tracker);
+	// use full video size for eye tracking, adjust to eg. remove edge
+	cv::Rect2i clip = cv::Rect2i(0, 0, fr.frame.cols, fr.frame.rows);
+	
+	Estimate::Distance distEst;
+	float pplDist[3] = {cm20.x, cm50.x, cm80.x};
+	int focusDist[3] = {200, 500, 800};
+	distEst.initialize(3, pplDist, focusDist);
+	
+	while ( fr.readNext() ) {
+		cv::RotatedRect point = tracker.findSmoothed(fr.frame(clip), ElSe::find, clip.tl());
+		circle(fr.frame, point.center, 3, 1234);
+		ellipse(fr.frame, point, 1234);
+		double est = distEst.estimate(point.center.x);
+		
+		Estimate::Distance::drawOnFrame(fr.frame, est);
+		imshow(fr.filePath, fr.frame);
+		
+		if( cv::waitKey(10) == 27 ) // esc key
+			exit(EXIT_SUCCESS);
+	}
+}
+
+namespace NS_SingleCam {
 	cv::Point2f averagePoint(std::vector<cv::Point2f> points) {
 		cv::Point2f sum = cv::Point2f(0,0);
 		for (cv::Point2f &p : points)
@@ -30,7 +57,7 @@ namespace NS_SingleEye {
 	}
 }
 
-SingleEye::SingleEye(FrameReader &fr, FindKalmanPupil* tracker) {
+void SingleCam::init(FrameReader &fr, FindKalmanPupil* tracker) {
 	
 	std::vector<cv::Point2f> pupilAverage;
 	int internalSetIndex = 0;
@@ -39,7 +66,7 @@ SingleEye::SingleEye(FrameReader &fr, FindKalmanPupil* tracker) {
 	cv::moveWindow(window_setup_single_eye, 400, 100);
 	
 	while (fr.readNext()) {
-		pupilAverage.push_back(NS_SingleEye::findCenter(fr.frame, tracker));
+		pupilAverage.push_back(NS_SingleCam::findCenter(fr.frame, tracker));
 		
 		while (pupilAverage.size() > 10) // limit average to the last x points
 			pupilAverage.erase(pupilAverage.begin());
@@ -69,7 +96,7 @@ SingleEye::SingleEye(FrameReader &fr, FindKalmanPupil* tracker) {
 					return; // user setup complete
 				}
 				
-				cv::Point2f avg = NS_SingleEye::averagePoint(pupilAverage);
+				cv::Point2f avg = NS_SingleCam::averagePoint(pupilAverage);
 				switch (internalSetIndex) {
 					case 0: cm20 = avg; break;
 					case 1: cm50 = avg; break;
@@ -80,3 +107,4 @@ SingleEye::SingleEye(FrameReader &fr, FindKalmanPupil* tracker) {
 		}
 	}
 }
+

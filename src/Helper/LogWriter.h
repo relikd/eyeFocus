@@ -9,6 +9,8 @@
 #ifndef LogWriter_h
 #define LogWriter_h
 
+#include "FileIO.h"
+
 class LogWriter {
 	FILE* file = NULL;
 	
@@ -16,11 +18,7 @@ public:
 	/** Write an optional .csv file. @param header First line of file */
 	LogWriter(const char* path = NULL, const char* header = NULL) {
 		if (path) {
-#ifdef _WIN32
-			fopen_s(&file, path, "w");
-#else
-			file = fopen(path, "w");
-#endif
+			file = FileIO::openFile(path, true);
 			if (file && header) fprintf(file, "%s", header);
 		}
 	};

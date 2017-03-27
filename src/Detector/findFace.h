@@ -18,7 +18,7 @@ namespace Detector {
 		
 	public:
 		/** @param name Path to cascade file */
-		Face(const cv::String name) {
+		void load(const cv::String name) {
 			// Load the cascades
 			if ( !face_cascade.load( name ) ) {
 				printf("--(!)Error loading face cascade, please change face_cascade_name in source code.\n");
@@ -33,6 +33,9 @@ namespace Detector {
 			//cv::pow(frame_gray, CV_64F, frame_gray);
 			
 			cv::Rect face_r = cv::Rect();
+			
+			if (face_cascade.empty())
+				return face_r;
 			
 			//-- Detect faces
 			std::vector<cv::Rect> faces;

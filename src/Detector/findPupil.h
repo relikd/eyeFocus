@@ -1,13 +1,13 @@
 //
-//  FindPupil.h
+//  findPupil.h
 //  eyeFocus
 //
 //  Created by Oleg Geier on 07/02/17.
 //
 //
 
-#ifndef FindPupil_h
-#define FindPupil_h
+#ifndef findPupil_h
+#define findPupil_h
 
 #include <opencv2/imgproc/imgproc.hpp>
 #include <functional>
@@ -87,4 +87,4 @@ public:
 	};
 };
 
-#endif /* FindPupil_h */
+#endif /* findPupil_h */

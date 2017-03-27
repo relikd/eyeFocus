@@ -1,20 +1,20 @@
 //
-//  setupDualCam.cpp
+//  trackingDualCam.cpp
 //  eyeFocus
 //
 //  Created by Oleg Geier on 12/02/17.
 //
 //
 
-#include "setupDualCam.h"
-#include "../Detector/FindPupil.h"
+#include "trackingDualCam.h"
+#include "../Detector/findPupil.h"
 #include "../Helper/FrameReader.h"
 #include "../Helper/LogWriter.h"
 #include "../Helper/FileIO.h"
 #include "../constants.h"
 #include "../Estimate/estimateDistance.h"
 
-using namespace Setup;
+using namespace Tracking;
 
 std::vector<float> pplDistancePoints;
 std::vector<int> focalPoints;
