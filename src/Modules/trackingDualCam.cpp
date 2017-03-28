@@ -57,11 +57,12 @@ inline void DualCam::clearMeasurement() {
 	setupFinished = false;
 }
 
-inline void DualCam::finalizeSetup() {
+inline void DualCam::finalizeSetup(bool writeToFile) {
 	setupFinished = true;
 	distEst.initialize(pplDistancePoints, focalPoints);
 	distEst.printEquation();
-	saveCalibrationFile("dualcam_calib.txt");
+	if (writeToFile)
+		saveCalibrationFile("dualcam_calib.txt");
 }
 
 
@@ -152,7 +153,7 @@ void DualCam::setupPhase(cv::Mat &frame, cv::Point2f pLeft, cv::Point2f pRight) 
 	switch (key) {
 		case 13: // return, confirm selection
 			//cv::destroyWindow("setup");
-			finalizeSetup();
+			finalizeSetup(true);
 			return; // user setup complete
 			
 		case 27: // escape key, undo selection

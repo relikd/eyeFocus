@@ -30,7 +30,7 @@ namespace Tracking {
 		void loadCalibrationFile(const char* path);
 		void saveCalibrationFile(const char* path);
 		inline void clearMeasurement();
-		inline void finalizeSetup();
+		inline void finalizeSetup(bool writeToFile = false);
 		// Graph / Plot
 		inline void drawPlot(int winx, cv::String window, cv::Mat plot, cv::String filename = "");
 		void showGraph(Estimate::Distance &estimator);

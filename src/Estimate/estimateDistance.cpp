@@ -69,7 +69,6 @@ void Distance::initialize(int count, float* pupilDistance, int* focusDistance, i
 			A[i * unknowns + a] = pow(pupilDistance[i], e(a));// * (pupilDistance[i] - 1520); // fix zero point 
 		}
 		b[i] = focusDistance[i];
-		printf("%d mm => %1.2f px\n", focusDistance[i], pupilDistance[i]);
 	}
 	
 	delete [] _x;
@@ -86,7 +85,7 @@ double Distance::estimate(float pplDist) {
 }
 
 inline int Distance::e(int index) {
-	return unknowns - index - 1; // Ax^2 + Bx + C  // (without -1: Ax^3 + Bx^2 + Cx )
+	return unknowns - index - 1; // Ax^2 + Bx + C  // ( without -1 => Ax^3 + Bx^2 + Cx )
 }
 
 
@@ -116,7 +115,7 @@ void Distance::printEquation(bool newline) {
 			printf("^%d", e(i));
 	}
 	if (newline)
-		printf("\n");
+		printf("\n\n");
 }
 
 cv::Mat Distance::graphFunction(int min_x, int max_x, std::vector<cv::Point2f> measurement) {
