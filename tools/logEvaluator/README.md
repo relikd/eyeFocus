@@ -10,9 +10,10 @@ Grouping is possible either by filename (focus distance) or property type (eg. r
 
 
 ### Usage:
-> ./logEvaluator [optional ext] PATH
+> ./logEvaluator [-skip 50] [-ext avi] PATH
 
 
 ### Note:
 - `PATH` must contain files in the format: `{1-200}[c]m.{ext}.pupilpos.csv`
-- If no `ext` provided 'MP4' will be used as default.
+- optional `-e`/`-ext`: filename extension (default: MP4)
+- optional `-s`/`-skip`: ignore first x values (default: 0)

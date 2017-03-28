@@ -7,7 +7,6 @@
 
 #define NumOfCols 10+1
 
-const size_t skipFirstXValues = 50;
 const char* file_error = "meanError.csv";
 const char* file_report = "report.txt";
 
@@ -130,8 +129,8 @@ char** loopOverAllLogFiles(const char *path, const char *fExt, std::function<voi
 	return nullptr;
 }
 
-size_t scanFile(FILE* file, MinMaxAvg* mma, MinMaxAvg* additional = nullptr) {
-	size_t skip = skipFirstXValues;
+size_t scanFile(FILE* file, unsigned long skipFirstXValues, MinMaxAvg* mma, MinMaxAvg* additional = nullptr) {
+	unsigned long skip = skipFirstXValues;
 	while (true) {
 		float val[NumOfCols];
 		int n = fscanf(file, "%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n", &val[0],&val[1],&val[2],&val[3],&val[4],&val[5],&val[6],&val[7],&val[8],&val[9]);
@@ -162,15 +161,32 @@ size_t scanFile(FILE* file, MinMaxAvg* mma, MinMaxAvg* additional = nullptr) {
 //  ---------------------------------------------------------------
 
 int main( int argc, const char** argv ) {
-	if (argc != 2 && argc != 3) {
-		fputs("Missing argument value. Path to folder containing eyeFocus log files expected.\n\n", stderr);
-		return EXIT_SUCCESS;
-	} else if (argc == 3 && strlen(argv[1]) > 4) {
-		fputs("Usage: logEvaluator {mov|mp4|avi} ../series7/ \n\n", stderr);
+	unsigned long skipValues = 0;
+	const char* videoExt = "MP4";
+	const char* folder = NULL;
+	
+	// program argument evaluation
+	for (int i = 1; i < argc; i++) {
+		const char* param = argv[i];
+		if (strcmp(param, "-s") == 0 || strcmp(param, "-skip") == 0) {
+			if (i+1 < argc) {
+				i++;
+				skipValues = strtoul(argv[i], NULL, 10);
+			}
+		} else if (strcmp(param, "-e") == 0 || strcmp(param, "-ext") == 0) {
+			if (i+1 < argc) {
+				i++;
+				videoExt = argv[i];
+			}
+		} else {
+			folder = argv[i];
+		}
+	}
+	
+	if (folder == NULL) {
+		fputs("Usage: logEvaluator {-skip 50} {-ext MP4} ../series7/ \n\n", stderr);
 		return EXIT_FAILURE;
 	}
-	const char* videoExt = (argc == 2 ? "MP4" : argv[1]); // default to MP4
-	const char* folder = argv[ argc - 1 ];
 //	printf("Processing folder '%s':\n", folder);
 	
 	MinMaxAvg global;
@@ -186,10 +202,10 @@ int main( int argc, const char** argv ) {
 	fprintf(report, "\n  file |  pupil dist   |     ratio     | angle | samples ");
 	fprintf(report, "\n-------+---------------+---------------+-------+---------\n");
 	
-	char** head = loopOverAllLogFiles(folder, videoExt, [&global,&globalDiff,&outErrFile,&report](int fDist, const char* fExt, FILE* file, char** header)
+	char** head = loopOverAllLogFiles(folder, videoExt, [&global,&globalDiff,&outErrFile,&report,skipValues](int fDist, const char* fExt, FILE* file, char** header)
 	{
 		MinMaxAvg local;
-		size_t count = scanFile(file, &local, &global);
+		size_t count = scanFile(file, skipValues, &local, &global);
 		
 		if (count > 0) {
 			Difference diff = Difference(local);
