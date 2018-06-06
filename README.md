@@ -11,7 +11,7 @@ Tested with macOS and Windows.
 
 ## Modes
 
-![menu](https://raw.githubusercontent.com/relikd/eyeFocus/master/doc/menu.png)
+![menu](./doc/menu.png)
 
 __Capture Video 1 Cam & 2 Cam__
 
@@ -57,17 +57,17 @@ DualCam example: `./eyeFocus -5 -h '../videos/series5/' 10cm.MP4`
 
 For the Dual Cam Tracking mode two webcams are mounted on a glasses frame. The frame is taken from 3D cinema glasses and the mounted webcams are two *Speedlink SL-6825-BK Snappy Smart Webcam*. They are cheap and focus is manually adjustable. On both is an IR LED soldered directly to the circuit board as you can see in the image below (above the lens).
 
-![dual1](https://raw.githubusercontent.com/relikd/eyeFocus/master/doc/glasses_1.jpg)
+![dual1](./doc/glasses_1.jpg)
 
 The cameras are hold together with a 3D printed holder ([STL file][4] in `doc` folder). It is connected with the frame by a piece of plastic (the baseplate of one of the webcams). Everything is held together with instant glue.
 
-![dual2](https://raw.githubusercontent.com/relikd/eyeFocus/master/doc/glasses_2.jpg)
+![dual2](./doc/glasses_2.jpg)
 
-![dual3](https://raw.githubusercontent.com/relikd/eyeFocus/master/doc/cam_holder.png)
+![dual3](./doc/cam_holder.png)
 
 
 
  [1]: http://www.inb.uni-luebeck.de/fileadmin/files/PUBPDFS/TiBa11b.pdf
  [2]: http://www.ti.uni-tuebingen.de/uploads/tx_timitarbeiter/ExCuSe_01.pdf
  [3]: https://www.ti.uni-tuebingen.de/uploads/tx_timitarbeiter/ElSe.pdf
- [4]: https://raw.githubusercontent.com/relikd/eyeFocus/master/doc/cam_holder.stl
+ [4]: ./doc/cam_holder.stl
